@@ -1,0 +1,275 @@
+/* ─── Encabezado de sección ─────────────────────────────────────── */
+.list-header {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.list-divider {
+  width: 100%;
+  height: 1px;
+  background: #e3e8f3;
+}
+
+.list-title {
+  width: 100%;
+  padding: 10px 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-align: left;
+}
+
+.t-blue {
+  color: #2f5fb3;
+  font-weight: bold;
+}
+.t-green {
+  color: #2e9e44;
+}
+
+/* ─── Card contenedor principal ─────────────────────────────────── */
+.main-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 6px 18px rgba(25, 42, 70, 0.08);
+  border: 1px solid #e3e8f3;
+}
+
+/* ─── Section header con borde lateral ──────────────────────────── */
+.section-header {
+  background: #f0f4ff;
+  padding: 18px 22px;
+  border-radius: 10px;
+  border-left: 5px solid #2f5fb3;
+  margin-bottom: 16px;
+}
+
+/* ─── Toolbar de búsqueda ────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+
+.actions {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  width: 100%;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #2f5fb3;
+  box-shadow: 0 0 0 3px rgba(47, 95, 179, 0.1);
+}
+
+/* ─── Tabla ──────────────────────────────────────────────────────── */
+.table-wrap {
+  overflow: auto;
+  border: 1px solid #e6eaf2;
+  border-radius: 12px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+  color: #111827;
+}
+
+.table th,
+.table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #e6eaf2;
+  text-align: left;
+}
+
+.table thead {
+  background: #f7f9fc;
+}
+
+.table th {
+  font-weight: 800;
+  color: #374151;
+  font-size: 0.88rem;
+  letter-spacing: 0.2px;
+}
+
+.table tbody tr {
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background: #f2f6ff;
+}
+
+.table tbody tr.selected {
+  background: #dbeafe;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.muted {
+  color: #6b7280;
+  text-align: center;
+}
+
+/* ─── Footer de tabla ────────────────────────────────────────────── */
+.table-footer {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: center;
+}
+
+/* ─── Barra de acciones anclada ──────────────────────────────────── */
+.footer-actions {
+  margin-top: 4px;
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px;
+  background: #f7f9fc;
+  border-radius: 10px;
+  border: 1px solid #e3e8f3;
+  justify-content: center;
+}
+
+.count {
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+/* ─── Celda de acciones de fila ──────────────────────────────────── */
+.actions-cell {
+  text-align: center;
+  display: flex;
+  gap: 6px;
+}
+
+.iconbtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  color: #2f5fb3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.iconbtn:hover {
+  background: #eef2ff;
+}
+
+.iconbtn.danger {
+  color: #b91c1c;
+}
+
+.iconbtn.danger:hover {
+  background: #fee2e2;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ─── Paginación ─────────────────────────────────────────────────── */
+.pager-btn {
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 8px;
+  padding: 1px 10px 4px;
+  cursor: pointer;
+  font-weight: 800;
+  color: #111827;
+  transition: background 0.15s ease;
+}
+
+.pager-btn:hover:not(:disabled) {
+  background: #f0f4ff;
+  border-color: #2f5fb3;
+  color: #2f5fb3;
+}
+
+.pager-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pager-text {
+  color: #374151;
+  font-size: 0.9rem;
+  margin: 0 15px;
+}
+
+.cell-center {
+  text-align: center;
+}
+
+/* ─── Badges de estado ───────────────────────────────────────────── */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 13px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: 0.15s ease;
+}
+
+.status-chip.is-active {
+  background: #e6f9ec;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.status-chip.is-inactive {
+  background: #fff1f1;
+  color: #c53030;
+  border-color: #fecaca;
+}

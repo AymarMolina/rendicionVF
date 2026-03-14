@@ -1,0 +1,225 @@
+/* ─── Card contenedor principal ─────────────────────────────────── */
+.main-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 6px 18px rgba(25, 42, 70, 0.08);
+  border: 1px solid #e3e8f3;
+  color: #111827;
+}
+
+.form-card {
+  width: 100%;
+  color: #111827;
+}
+
+.divider {
+  height: 1px;
+  background: #e3e8f3;
+  width: 100%;
+}
+
+/* ─── Section header con borde lateral ──────────────────────────── */
+.form-title {
+  margin-bottom: 16px;
+}
+
+.section-header {
+  background: #f0f4ff;
+  padding: 18px 22px;
+  border-radius: 10px;
+  border-left: 5px solid #2f5fb3;
+  margin-bottom: 16px;
+}
+
+.title-row {
+  padding: 30px 0 4px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  display: flex;
+  gap: 8px;
+  line-height: 1.2;
+  align-items: baseline;
+}
+
+.title-row.left {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.title-part.blue {
+  color: #2f5fb3;
+  font-weight: bold;
+}
+
+.title-part.green {
+  color: #2e9e44;
+}
+
+.desc {
+  color: #6b7280;
+  font-size: 0.92rem;
+  padding-bottom: 10px;
+}
+
+.desc.left {
+  text-align: left;
+}
+
+/* ─── Grid de campos ─────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 0.85rem;
+  color: #374151;
+  font-weight: 700;
+}
+
+.input {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  width: 100%;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #2f5fb3;
+  box-shadow: 0 0 0 3px rgba(47, 95, 179, 0.1);
+}
+
+.col-span-2 {
+  grid-column: span 2;
+}
+
+/* ─── Radio buttons ──────────────────────────────────────────────── */
+.radio-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.radio {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.radio:hover {
+  border-color: #2f5fb3;
+  background: #f0f4ff;
+}
+
+.radio input {
+  margin: 0;
+}
+
+/* ─── Footer de acciones del formulario ──────────────────────────── */
+.footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #f7f9fc;
+  border-radius: 10px;
+  border: 1px solid #e3e8f3;
+}
+
+.right-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ─── Botones con jerarquía visual ───────────────────────────────── */
+.btn {
+  border-radius: 8px;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.92rem;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Primario → Nuevo / Guardar */
+.btn.primary {
+  background: #2f5fb3;
+  border-color: #2f5fb3;
+  color: #fff;
+}
+
+.btn.primary:hover {
+  background: #244c91;
+  border-color: #244c91;
+}
+
+/* Secundario → Exportar */
+.btn.secondary {
+  background: #e8edf7;
+  border-color: #c7d3ee;
+  color: #2f5fb3;
+}
+
+.btn.secondary:hover {
+  background: #d6e0f5;
+  border-color: #2f5fb3;
+}
+
+/* Neutro / Ghost → Cancelar / Imprimir */
+.btn.ghost {
+  background: #fff;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.btn.ghost:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* Peligro → Eliminar */
+.btn.danger {
+  background: #fff;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.btn.danger:hover {
+  background: #fee2e2;
+  border-color: #b91c1c;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .col-span-2 {
+    grid-column: span 1;
+  }
+}
