@@ -12,7 +12,6 @@
       </select>
     </div>
 
-    <!-- Formulario -->
     <div class="card mb">
       <div class="card-header">
         <span class="card-title-sm">Registrar Nuevo Gasto</span>
@@ -54,15 +53,15 @@
           </div>
           <div class="form-group" v-if="form.tieneRuc">
             <label class="form-label">Tipo Comprobante</label>
-            <select v-model="form.tipoComprobante" class="form-input">
-              <option>Boleta de Venta</option>
-              <option>Recibo de Gasto</option>
-              <option>Factura</option>
-              <option>Ticket</option>
+           <select v-model="form.tipoComprobante" class="form-input">
+              <option value="boleta_venta">Boleta de Venta</option>
+              <option value="recibo_gasto">Recibo de Gasto</option>
+              <option value="factura">Factura</option>
+              <option value="ticket">Ticket</option>
             </select>
           </div>
           <div class="form-group" v-if="form.tieneRuc">
-            <label class="form-label">N° de Comprobante</label>
+            <label class="form-label required">N° de Comprobante</label>
             <input v-model="form.nComprobante" class="form-input" placeholder="Ej: E001-582" />
           </div>
           <div class="form-group">
@@ -75,7 +74,7 @@
           </div>
         </div>
 
-        <div class="upload-zone" @click="fileInput?.click()">
+        <div class="upload-zone" :class="{ 'upload-required': intentoGuardar && form.tieneRuc && !selectedFile }" @click="fileInput?.click()">
           <Upload class="upload-ico" />
           <div class="upload-text">
             <strong>Fotografía / PDF del comprobante</strong><br/>
@@ -88,16 +87,29 @@
         </div>
 
         <div class="form-actions">
+          <div v-if="editandoId" class="edit-banner">
+            <Pencil style="width:14px;height:14px" /> Editando gasto — los cambios reemplazarán el registro actual
+          </div>
           <button class="btn primary" @click="agregarGasto">
-            <Plus class="btn-ico" /> Agregar Gasto
+            <component :is="editandoId ? Pencil : Plus" class="btn-ico" />
+            {{ editandoId ? 'Actualizar Gasto' : 'Agregar Gasto' }}
           </button>
-          <button class="btn secondary" @click="showDJ = true">Declaración Jurada</button>
-          <button class="btn secondary" @click="showMovilidad = true">Planilla Movilidad</button>
+
+          <button
+            v-if="editandoId && form.rubro === 'transporte'"
+            class="btn secondary"
+            @click="abrirEditarMovilidad"
+          >
+            <MapPin class="btn-ico" /> Editar Puntos de Movilidad
+          </button>
+
+          <button v-if="editandoId" class="btn secondary" @click="cancelarEdicion">
+            Cancelar Edición
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Tabla gastos -->
     <div class="card">
       <div class="card-header">
         <span class="card-title-sm">Gastos Registrados</span>
@@ -110,16 +122,36 @@
           </thead>
           <tbody>
             <tr v-for="g in gastosActivos" :key="g.id">
-              <td>{{ g.fecha }}</td>
+              <td>{{ g.fecha_documento }}</td>
               <td class="fw">{{ g.concepto }}</td>
               <td><span class="chip-rubro">{{ g.rubro }}</span></td>
-              <td style="color:#2c4fd4;font-size:12px">{{ g.comprobante }}</td>
-              <td class="fw">{{ fmt(g.monto) }}</td>
-              <td style="color:#6b7597">{{ g.transferenciaId }}</td>
               <td>
-                <button class="icon-btn" @click="store.eliminarGasto(g.id)" title="Eliminar">
-                  <Trash2 class="btn-ico" />
-                </button>
+                <a
+                  v-if="g.archivo_url"
+                  :href="`http://localhost:3000${g.archivo_url}`"
+                  target="_blank"
+                  class="comp-link"
+                  :title="`Descargar ${g.num_comprobante || 'comprobante'}`"
+                >
+                  <Paperclip class="comp-ico" />
+                  {{ g.num_comprobante || 'DJ' }}
+                </a>
+                <span v-else style="color:#6b7597;font-size:12px">
+                  {{ g.num_comprobante || 'DJ' }}
+                </span>
+              </td>
+              <td class="fw">{{ fmt(g.monto) }}</td>
+              <td style="color:#6b7597">{{ g.transferencia_id }}</td>
+              <td>
+                <div style="display:flex;gap:6px">
+                  <button class="icon-btn edit" @click="editarGasto(g)" title="Editar">
+                    <Pencil class="btn-ico" />
+                  </button>
+                  <button class="icon-btn" @click="eliminarGasto(g.id)" title="Eliminar"
+                    :disabled="g.estado === 'aprobado'">
+                    <Trash2 class="btn-ico" />
+                  </button>
+                </div>
               </td>
               <td><StatusBadge :status="g.estado" /></td>
             </tr>
@@ -131,24 +163,25 @@
       </div>
     </div>
 
-    <!-- Modal DJ -->
-    <BaseModal :open="showDJ" @close="showDJ=false">
+    <BaseModal :open="showDJ" @close="cerrarDJ">
       <div class="modal-inner">
         <div class="modal-hd">
           <div class="modal-title">Declaración Jurada de Gastos</div>
-          <button class="modal-close" @click="showDJ=false"><X /></button>
+          <button class="modal-close" @click="cerrarDJ"><X /></button>
+
         </div>
         <div class="info-alert">
           <Info class="alert-ico" />
-          <span>Use este formulario solo cuando el proveedor no pueda emitir comprobante SUNAT.</span>
+          <span>Use este formulario cuando el proveedor no pueda emitir comprobante SUNAT.</span>
         </div>
-        <div class="form-row r4" style="margin-bottom:14px">
+
+        <div class="form-row r3" style="margin-bottom:14px">
           <div class="form-group">
-            <label class="form-label">Fecha</label>
+            <label class="form-label required">Fecha</label>
             <input v-model="dj.fecha" type="date" class="form-input" />
           </div>
           <div class="form-group">
-            <label class="form-label">Rubro</label>
+            <label class="form-label required">Rubro</label>
             <select v-model="dj.rubro" class="form-input">
               <option value="alimentos">Alimentos</option>
               <option value="transporte">Transporte</option>
@@ -159,84 +192,114 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Detalle</label>
-            <input v-model="dj.detalle" class="form-input" placeholder="Descripción del gasto" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Monto (S/)</label>
-            <input v-model.number="dj.monto" type="number" class="form-input" placeholder="0.00" />
+            <label class="form-label required">Monto (S/)</label>
+            <div class="monto-wrap">
+              <span class="monto-prefix">S/</span>
+              <input v-model.number="dj.monto" type="number" class="form-input monto-input" placeholder="0.00" step="0.01" />
+            </div>
           </div>
         </div>
-        <button class="btn primary btn-sm" @click="agregarDJ">
-          <Plus class="btn-ico" /> Agregar gasto
+
+        <div class="form-row r3" style="margin-bottom:14px">
+          <div class="form-group">
+            <label class="form-label required">Nombre del Proveedor</label>
+            <input v-model="dj.nombre_proveedor" class="form-input" placeholder="Nombre completo" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">DNI del Proveedor</label>
+            <input v-model="dj.dni_proveedor" class="form-input" placeholder="Ej: 12345678" maxlength="8" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Lugar</label>
+            <input v-model="dj.lugar" class="form-input" placeholder="Ej: Mercado Central Pasaje 8" />
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label required">Detalle / Descripción</label>
+          <input v-model="dj.detalle" class="form-input" placeholder="Ej: Verduras y frutas de temporada" />
+        </div>
+
+        <button class="btn primary btn-sm" @click="agregarDJ" :disabled="store.loading">
+          <Plus class="btn-ico" /> Registrar Gasto DJ
         </button>
-        <table style="margin-top:14px;width:100%;border-collapse:collapse">
-          <thead><tr><th>Fecha</th><th>Rubro</th><th>Detalle</th><th>Monto</th></tr></thead>
+
+        <table style="margin-top:14px;width:100%;border-collapse:collapse" v-if="djRegistros.length > 0">
+          <thead>
+            <tr><th>Fecha</th><th>Rubro</th><th>Proveedor</th><th>Detalle</th><th>Monto</th></tr>
+          </thead>
           <tbody>
             <tr v-for="(r,i) in djRegistros" :key="i">
               <td>{{ r.fecha }}</td>
               <td style="text-transform:capitalize">{{ r.rubro }}</td>
+              <td>{{ r.nombre_proveedor }}</td>
               <td>{{ r.detalle }}</td>
               <td>S/ {{ r.monto }}</td>
             </tr>
-            <tr v-if="djRegistros.length===0"><td colspan="4" class="empty">Sin registros</td></tr>
           </tbody>
         </table>
+
         <div class="modal-footer">
           <button class="btn secondary" @click="showDJ=false">Cerrar</button>
-          <button class="btn primary"><Download class="btn-ico" /> Exportar DJ</button>
         </div>
       </div>
     </BaseModal>
 
-    <!-- Modal Movilidad -->
-    <BaseModal :open="showMovilidad" @close="showMovilidad=false">
+    <BaseModal :open="showMovilidad" @close="cerrarMovilidad">
       <div class="modal-inner">
         <div class="modal-hd">
           <div class="modal-title">Planilla de Movilidad</div>
-          <button class="modal-close" @click="showMovilidad=false"><X /></button>
+          <button class="modal-close" @click="cerrarMovilidad"><X /></button>
         </div>
-        <div class="form-row" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+
+        <div class="info-alert">
+          <Info class="alert-ico" />
+          <span>Complete los datos del recorrido. Fecha y monto se toman del formulario principal.</span>
+        </div>
+
+        <div class="form-row r3" style="margin-bottom:14px">
           <div class="form-group">
-            <label class="form-label">Fecha</label>
-            <input v-model="mov.fecha" type="date" class="form-input" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Punto Partida</label>
+            <label class="form-label required">Punto Partida</label>
             <input v-model="mov.partida" class="form-input" placeholder="Ej: Pasaje 15" />
           </div>
           <div class="form-group">
-            <label class="form-label">Punto Llegada</label>
-            <input v-model="mov.llegada" class="form-input" placeholder="Ej: Mercado" />
+            <label class="form-label required">Punto Llegada</label>
+            <input v-model="mov.llegada" class="form-input" placeholder="Ej: Mercado Central" />
           </div>
           <div class="form-group">
-            <label class="form-label">IIEE</label>
+            <label class="form-label required">IIEE</label>
             <select v-model="mov.iiee" class="form-input">
               <option>IE N° 20124</option>
               <option>IE N° 20089</option>
+              <option>IE N° 30015</option>
             </select>
           </div>
-          <div class="form-group">
-            <label class="form-label">Monto (S/)</label>
-            <input v-model.number="mov.monto" type="number" class="form-input" placeholder="0.00" />
-          </div>
         </div>
-        <button class="btn primary btn-sm" @click="agregarMov">
-          <Plus class="btn-ico" /> Agregar
-        </button>
-        <table style="margin-top:14px;width:100%;border-collapse:collapse">
-          <thead><tr><th>Fecha</th><th>Partida</th><th>Llegada</th><th>IIEE</th><th>Monto</th></tr></thead>
+
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label">Motivo del viaje</label>
+          <input v-model="mov.motivo" class="form-input" placeholder="Ej: Traslado de insumos al mercado" />
+        </div>
+
+        <table style="margin-top:14px;width:100%;border-collapse:collapse" v-if="movRegistros.length > 0">
+          <thead>
+            <tr><th>Partida</th><th>Llegada</th><th>IIEE</th><th>Motivo</th></tr>
+          </thead>
           <tbody>
             <tr v-for="(r,i) in movRegistros" :key="i">
-              <td>{{ r.fecha }}</td><td>{{ r.partida }}</td><td>{{ r.llegada }}</td>
-              <td>{{ r.iiee }}</td><td>S/ {{ r.monto }}</td>
+              <td>{{ r.partida }}</td>
+              <td>{{ r.llegada }}</td>
+              <td>{{ r.iiee }}</td>
+              <td>{{ r.motivo }}</td>
             </tr>
-            <tr v-if="movRegistros.length===0"><td colspan="5" class="empty">Sin registros</td></tr>
           </tbody>
         </table>
+
         <div class="modal-footer">
-          <button class="btn secondary" @click="showMovilidad=false">Cerrar</button>
-          <button class="btn primary"><Download class="btn-ico" /> Exportar DJ</button>
+          <button class="btn secondary" @click="cerrarMovilidad">Cancelar</button>
+          <button class="btn primary" @click="agregarMov">
+            <Plus class="btn-ico" /> Confirmar y Registrar
+          </button>
         </div>
       </div>
     </BaseModal>
@@ -244,90 +307,343 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
+
 import { useRoute } from 'vue-router'
-import { Plus, Trash2, Upload, CheckCircle, Info, Download, X } from 'lucide-vue-next'
-import { useTransferenciaStore } from '@/stores/transferencia.store'
-import { useToastStore }         from '@/stores/toast.store'
-import type { RubroGasto }       from '@/types/rendicion'
+import { Plus, Trash2, Upload, CheckCircle, Info, Download, X, Paperclip, Pencil } from 'lucide-vue-next'
+import { useGastosStore } from '@/stores/gastos.store'
+import { useToastStore }  from '@/stores/toast.store'
+import type { RubroGasto } from '@/types/rendicion'
 import StatusBadge from '@/components/ui/shared/StatusBadge.vue'
 import BaseModal   from '@/components/ui/overlay/BaseModal.vue'
 
-const store = useTransferenciaStore()
+const store = useGastosStore()
 const toast = useToastStore()
 const route = useRoute()
-
-const selectedTransfId = ref(store.activa?.id ?? store.transferencias[0]?.id)
+const intentoGuardar = ref(false)
+const selectedTransfId = ref<any>(null)
 const showDJ           = ref(false)
 const showMovilidad    = ref(false)
 const selectedFile     = ref('')
+const archivoFile      = ref<File | null>(null)
 const fileInput        = ref<HTMLInputElement>()
 const montoError       = ref(false)
+const presupInfo       = ref<any>(null)
+const movilFlow = ref<'ruc' | 'dj' | null>(null)
+const editandoId = ref<number | null>(null)
 
 const form = reactive({
-  fecha:'', concepto:'', rubro:'' as RubroGasto,
-  tieneRuc:true, tipoComprobante:'Boleta de Venta', nComprobante:'', monto:0
+  fecha: '', concepto: '', rubro: '' as RubroGasto,
+  tieneRuc: true, tipoComprobante: 'boleta_venta', nComprobante: '', monto: 0,
+  dj_nombre_proveedor: '', dj_dni_proveedor: '', dj_descripcion: '', dj_lugar: '',
+  mov_punto_partida: '', mov_punto_llegada: '', mov_institucion_id: '',
+  mov_motivo: '', mov_iiee: 'IE N° 20124'  
 })
-const dj  = reactive({ fecha:'', rubro:'alimentos', detalle:'', monto:0 })
-const mov = reactive({ fecha:'', partida:'', llegada:'', iiee:'IE N° 20124', monto:0 })
+
+const dj = reactive({
+  fecha: '',
+  rubro: 'alimentos',
+  detalle: '',
+  monto: 0,
+  nombre_proveedor: '',  
+  dni_proveedor: '',    
+  lugar: ''             
+})
+const mov = reactive({ 
+  fecha: '', partida: '', llegada: '', 
+  iiee: 'IE N° 20124', monto: 0,
+  motivo: ''  
+})
 const djRegistros  = ref<any[]>([])
 const movRegistros = ref<any[]>([])
-
-onMounted(() => {
+const gastosActivos = computed(() => store.gastos)
+onMounted(async () => {
   form.fecha = new Date().toISOString().split('T')[0]
   dj.fecha   = form.fecha
   mov.fecha  = form.fecha
-  if (route.query.transf) selectedTransfId.value = route.query.transf as string
+
+  await store.cargarTransferencias()
+
+  if (route.query.transf) {
+    selectedTransfId.value = route.query.transf
+  } else if (store.transferencias.length > 0) {
+    selectedTransfId.value = store.transferencias[0].id
+  }
 })
 
-const gastosActivos = computed(() => store.gastosPorTransferencia(selectedTransfId.value))
+watch(selectedTransfId, async (id) => {
+  if (id) await store.cargarGastos(id)
+}, { immediate: true })
+
+watch(() => form.tieneRuc, (val) => {
+  if (!val) showDJ.value = true
+})
+watch(() => form.tieneRuc, (val) => {
+  if (val) {
+    form.dj_nombre_proveedor = ''
+    form.dj_descripcion = ''
+    form.dj_dni_proveedor = ''
+    form.dj_lugar = ''
+  }
+})
+watch([() => form.rubro, () => form.monto], async ([rubro, monto]) => {
+  if (!rubro || !monto || !selectedTransfId.value) {
+    presupInfo.value = null
+    montoError.value = false
+    return
+  }
+  const info = await store.checkPresupuesto(selectedTransfId.value, rubro, monto)
+  presupInfo.value = info
+  montoError.value = info.excede
+})
 
 function fmt(n: number) {
-  return 'S/ ' + n.toLocaleString('es-PE', { minimumFractionDigits:2, maximumFractionDigits:2 })
+  return 'S/ ' + n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
-
+function abrirEditarMovilidad() {
+  mov.partida = form.mov_punto_partida
+  mov.llegada = form.mov_punto_llegada
+  mov.motivo  = form.mov_motivo
+  mov.iiee    = form.mov_iiee ?? 'IE N° 20124'
+  movilFlow.value = 'ruc'
+  showMovilidad.value = true
+}
 function onFileChange(e: Event) {
   const f = (e.target as HTMLInputElement).files?.[0]
-  if (f) selectedFile.value = f.name
+  if (f) {
+    selectedFile.value = f.name
+    archivoFile.value  = f
+  }
 }
 
-function agregarGasto() {
+async function agregarGasto() {
+  intentoGuardar.value = true
+
   if (!form.concepto || !form.rubro || !form.monto) {
     toast.warning('Campos incompletos', 'Complete todos los campos obligatorios')
     return
   }
-  const comp = form.tieneRuc ? (form.nComprobante || 'Sin número') : 'DJ'
-  store.agregarGasto({
-    transferenciaId: selectedTransfId.value,
-    fecha: new Date().toLocaleDateString('es-PE'),
-    concepto: form.concepto.toUpperCase(),
-    rubro: form.rubro,
-    tieneRuc: form.tieneRuc,
-    tipoComprobante: form.tipoComprobante,
-    nComprobante: comp,
-    monto: form.monto,
-  })
-  form.concepto = ''
-  form.monto    = 0
-  selectedFile.value = ''
-  toast.success('Gasto registrado', 'El gasto fue agregado correctamente')
+  if (form.tieneRuc && !form.nComprobante.trim()) {
+    toast.warning('Comprobante requerido', 'Ingrese el número de comprobante')
+    return
+  }
+  if (form.tieneRuc && !archivoFile.value) {
+    toast.warning('Archivo requerido', 'Debe adjuntar la foto o PDF del comprobante')
+    return
+  }
+  if (montoError.value) {
+    toast.error('Presupuesto excedido', 'El monto supera el saldo disponible del rubro')
+    return
+  }
+
+  if (form.rubro === 'transporte' && !form.mov_punto_partida) {
+    movilFlow.value = 'ruc'
+    mov.fecha  = form.fecha
+    mov.motivo = form.concepto
+    showMovilidad.value = true
+    return
+  }
+
+  if (!form.tieneRuc && !form.dj_nombre_proveedor) {
+    showDJ.value = true
+    toast.warning('Declaración Jurada requerida', 'Complete los datos del proveedor')
+    return
+  }
+
+  await guardarGasto()
+}
+function cerrarDJ() {
+  showDJ.value = false
+  if (!form.dj_nombre_proveedor) {
+    form.tieneRuc = true
+  }
 }
 
-function agregarDJ() {
-  if (!dj.fecha || !dj.detalle || !dj.monto) { toast.warning('Complete todos los campos'); return }
-  djRegistros.value.unshift({ ...dj })
-  dj.detalle = ''
-  dj.monto   = 0
-  toast.success('Gasto DJ registrado')
-}
-
-function agregarMov() {
-  if (!mov.fecha || !mov.partida || !mov.llegada || !mov.monto) { toast.warning('Complete todos los campos'); return }
-  movRegistros.value.unshift({ ...mov })
+function cerrarMovilidad() {
+  showMovilidad.value = false
+  movilFlow.value = null
+  if (!form.mov_punto_partida) {
+    form.rubro = '' as RubroGasto
+  }
   mov.partida = ''
   mov.llegada = ''
-  mov.monto   = 0
-  toast.success('Movilidad registrada')
+  mov.motivo  = ''
+}
+async function guardarGasto() {
+  try {
+    const payload: any = {
+      transferencia_id: selectedTransfId.value,
+      fecha_documento:  form.fecha,
+      concepto:         form.concepto,
+      rubro:            form.rubro,
+      tiene_ruc:        form.tieneRuc,
+      tipo_comprobante: form.tieneRuc
+        ? (form.rubro === 'transporte' ? 'planilla_movilidad' : form.tipoComprobante)
+        : 'declaracion_jurada',
+      num_comprobante:  form.nComprobante || '',
+      monto:            form.monto,
+    }
+
+    if (!form.tieneRuc) {
+      payload.dj_nombre_proveedor = form.dj_nombre_proveedor
+      payload.dj_dni_proveedor    = form.dj_dni_proveedor
+      payload.dj_descripcion      = form.dj_descripcion
+      payload.dj_lugar            = form.dj_lugar
+    }
+
+    if (form.rubro === 'transporte') {
+      const iieeMap: Record<string, number> = {
+        'IE N° 20124': 1, 'IE N° 20089': 2, 'IE N° 30015': 3,
+      }
+      payload.mov_punto_partida  = form.mov_punto_partida
+      payload.mov_punto_llegada  = form.mov_punto_llegada
+      payload.mov_institucion_id = iieeMap[form.mov_iiee ?? 'IE N° 20124'] ?? 1
+      payload.mov_motivo         = form.mov_motivo
+      payload.tipo_comprobante   = 'planilla_movilidad'
+    }
+
+    if (editandoId.value) {
+      await store.actualizarGasto(editandoId.value, payload, archivoFile.value)
+      toast.success('Gasto actualizado', 'Los cambios fueron guardados')
+    } else {
+      const result = await store.registrarGasto(payload, archivoFile.value)
+      if (result.advertencia) toast.warning('Advertencia', result.advertencia)
+      else toast.success('Gasto registrado', 'El gasto fue agregado correctamente')
+    }
+
+    await store.cargarGastos(selectedTransfId.value)
+    cancelarEdicion()
+    presupInfo.value = null; montoError.value = false
+    movilFlow.value = null
+
+  } catch (e: any) {
+    toast.error('Error', e.message)
+  }
+}
+async function eliminarGasto(id: number) {
+  try {
+    await store.eliminarGasto(id)
+    toast.success('Gasto eliminado')
+  } catch (e: any) {
+    toast.error('Error', e.message)
+  }
+}
+
+async function agregarDJ() {
+  if (!dj.fecha || !dj.detalle || !dj.monto || !dj.nombre_proveedor) {
+    toast.warning('Campos incompletos', 'Complete fecha, proveedor, detalle y monto')
+    return
+  }
+
+  if (dj.rubro === 'transporte' && !form.mov_punto_partida) {
+    movilFlow.value = 'dj'
+    mov.fecha  = dj.fecha
+    mov.motivo = dj.detalle
+    showMovilidad.value = true
+    return
+  }
+
+  await guardarDJ()
+}
+async function guardarDJ() {
+  try {
+    const iieeMap: Record<string, number> = {
+      'IE N° 20124': 1, 'IE N° 20089': 2, 'IE N° 30015': 3,
+    }
+
+    const payload: any = {
+      transferencia_id:    selectedTransfId.value,
+      fecha_documento:     dj.fecha,
+      concepto:            dj.detalle.toUpperCase(),
+      rubro:               dj.rubro,
+      tiene_ruc:           false,
+      tipo_comprobante:    dj.rubro === 'transporte' ? 'planilla_movilidad' : 'declaracion_jurada',
+      monto:               dj.monto,
+      dj_nombre_proveedor: dj.nombre_proveedor,
+      dj_dni_proveedor:    dj.dni_proveedor,
+      dj_descripcion:      dj.detalle,
+      dj_lugar:            dj.lugar,
+    }
+
+    if (dj.rubro === 'transporte') {
+      payload.mov_punto_partida  = form.mov_punto_partida
+      payload.mov_punto_llegada  = form.mov_punto_llegada
+      payload.mov_institucion_id = iieeMap[form.mov_iiee ?? 'IE N° 20124'] ?? 1
+      payload.mov_motivo         = form.mov_motivo
+    }
+
+    await store.registrarGasto(payload, null)
+    djRegistros.value.unshift({ ...dj })
+    await store.cargarGastos(selectedTransfId.value)
+
+    dj.detalle = ''; dj.monto = 0
+    dj.nombre_proveedor = ''; dj.dni_proveedor = ''; dj.lugar = ''
+    form.mov_punto_partida = ''; form.mov_punto_llegada = ''
+    movilFlow.value = null
+
+    toast.success('Gasto DJ registrado', 'Aparece en la tabla principal')
+  } catch (e: any) {
+    toast.error('Error', e.message)
+  }
+}
+
+async function guardarDJConMovilidad() {
+  await guardarDJ()
+}
+function editarGasto(g: any) {
+  editandoId.value = g.id
+  form.fecha        = g.fecha_documento?.split('T')[0] ?? ''
+  form.concepto     = g.concepto
+  form.rubro        = g.rubro
+  form.tieneRuc     = g.tiene_ruc === true || g.tiene_ruc === 1
+  form.tipoComprobante = g.tipo_comprobante ?? 'boleta_venta'
+  form.nComprobante = g.num_comprobante ?? ''
+  form.monto        = g.monto
+
+  form.dj_nombre_proveedor = g.nombre_proveedor ?? ''
+  form.dj_descripcion      = g.dj_descripcion   ?? ''
+  form.dj_dni_proveedor    = g.dni_proveedor     ?? ''
+
+  form.mov_punto_partida = g.punto_partida ?? ''
+  form.mov_punto_llegada = g.punto_llegada ?? ''
+  form.mov_motivo        = g.mov_motivo    ?? ''
+
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+  toast.success('Modo edición', `Editando: ${g.concepto}`)
+}
+
+function cancelarEdicion() {
+  editandoId.value  = null
+  form.concepto     = ''
+  form.monto        = 0
+  form.nComprobante = ''
+  form.rubro        = '' as RubroGasto
+  form.tieneRuc     = true
+  selectedFile.value = ''
+  archivoFile.value  = null
+  intentoGuardar.value = false
+}
+
+async function agregarMov() {
+  if (!mov.partida || !mov.llegada || !mov.iiee) {
+    toast.warning('Campos incompletos', 'Complete partida, llegada e IIEE')
+    return
+  }
+
+  form.mov_punto_partida = mov.partida
+  form.mov_punto_llegada = mov.llegada
+  form.mov_iiee          = mov.iiee
+  form.mov_motivo        = mov.motivo
+
+  showMovilidad.value = false
+
+  if (movilFlow.value === 'ruc') {
+    await guardarGasto()
+  } else if (movilFlow.value === 'dj') {
+    await guardarDJConMovilidad()
+  }
+
+  mov.partida = ''; mov.llegada = ''; mov.motivo = ''
 }
 </script>
 
@@ -377,7 +693,7 @@ function agregarMov() {
 .btn-ico { width:14px; height:14px; }
 .table-wrap { overflow-x:auto; }
 table { width:100%; border-collapse:collapse; }
-thead th { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6b7597; padding:10px 16px; border-bottom:1px solid #d4dae8; background:#fafbfd; text-align:left; }
+thead th { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#1a1a1b; padding:10px 16px; border-bottom:1px solid #d4dae8; background:#fafbfd; text-align:left; }
 tbody td { padding:11px 16px; font-size:13.5px; border-bottom:1px solid #f0f2f8; }
 tbody tr:last-child td { border-bottom:none; }
 tbody tr:hover { background:#f0f4ff; }
@@ -386,7 +702,7 @@ td.empty { text-align:center; color:#6b7597; padding:24px; }
 .icon-btn { background:#fee2e2; border:none; border-radius:7px; padding:5px; cursor:pointer; display:flex; align-items:center; color:#dc2626; transition:all .15s; }
 .icon-btn:hover { background:#dc2626; color:#fff; }
 .chip-rubro { background:#e8edf9; color:#2c4fd4; padding:2px 8px; border-radius:6px; font-size:11.5px; font-weight:700; text-transform:capitalize; }
-/* Modal */
+
 .modal-inner { }
 .modal-hd { display:flex; align-items:center; justify-content:space-between; padding-bottom:14px; border-bottom:1px solid #d4dae8; margin-bottom:16px; }
 .modal-title { font-size:16px; font-weight:700; color:#1a2340; }
@@ -394,4 +710,62 @@ td.empty { text-align:center; color:#6b7597; padding:24px; }
 .modal-footer { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; padding-top:14px; border-top:1px solid #d4dae8; }
 .info-alert { display:flex; gap:10px; align-items:flex-start; background:#e8edf9; border:1px solid #93c5fd; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:12.5px; color:#1a2f6e; }
 .alert-ico { width:16px; height:16px; flex-shrink:0; margin-top:1px; }
+.upload-zone.upload-required {
+  border-color: #dc2626;
+  background: #fff5f5;
+}
+td{
+  color:rgb(124, 123, 123);
+}
+.upload-zone.upload-required .upload-text strong {
+  color: #dc2626;
+}
+.upload-zone.upload-required::after {
+  content: ' *';
+  color: #dc2626;
+  font-weight: 700;
+}
+.comp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #2c4fd4;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 3px 8px;
+  background: #e8edf9;
+  border-radius: 6px;
+  transition: all .15s;
+}
+.comp-link:hover {
+  background: #2c4fd4;
+  color: #fff;
+}
+.comp-ico {
+  width: 12px;
+  height: 12px;
+}
+.icon-btn.edit {
+  background: #e8edf9;
+  color: #2c4fd4;
+}
+.icon-btn.edit:hover {
+  background: #2c4fd4;
+  color: #fff;
+}
+.edit-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #b45309;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  width: 100%;
+  margin-bottom: 8px;
+}
 </style>

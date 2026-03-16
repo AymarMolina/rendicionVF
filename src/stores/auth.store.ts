@@ -1,86 +1,59 @@
 import { defineStore } from 'pinia'
-import type { Usuario } from '@/types/usuario'
+import { ref, computed } from 'vue'
 
-const TOKEN_KEY   = 'token_pae_web'
-const USER_KEY    = 'usuario_pae_web'
-const USE_MOCK    = import.meta.env.VITE_USE_MOCK === 'true'
+export const useAuthStore = defineStore('auth', () => {
+  const user    = ref<any>(JSON.parse(localStorage.getItem('user') ?? 'null'))
+  const token   = ref<string | null>(localStorage.getItem('token'))
+  const loading = ref(false)
 
-type UsuarioApp = Usuario & {
-  Rol: 'Tesorero' | 'ATC' | 'Coordinador'
-  IE?: string
-  Zona?: string
-}
+  // ✅ Propiedades que usan el Sidebar y TopBar
+  const rol            = computed(() => {
+    if (user.value?.rol === 'tesorero')                   return 'Tesorero'
+    if (user.value?.rol === 'atc')                        return 'ATC'
+    if (user.value?.rol === 'coordinador_administrativo') return 'Coordinador'
+    return user.value?.rol ?? ''
+  })
+  const nombreCompleto = computed(() =>
+    user.value ? `${user.value.nombres} ${user.value.apellidos}` : ''
+  )
+  const ie   = computed(() => user.value?.ie   ?? '')
+  const zona = computed(() => user.value?.zona ?? '')
 
-const MOCK_USERS: Record<string, UsuarioApp> = {
-  tesorero: {
-    Operacion: 1, Autenticado: true, Token: 'mock-token-tesorero',
-    Mensaje: 'OK', Correo: null, PersonaId: 1, NumeroDocumento: null,
-    FotografiaDriveUrl: null, NombreCompleto: 'Pedro Muñez', UsuarioId: 1,
-    Rol: 'Tesorero', IE: 'IE N° 20124', Zona: 'Lima Este · Zona A',
-  },
-  atc: {
-    Operacion: 1, Autenticado: true, Token: 'mock-token-atc',
-    Mensaje: 'OK', Correo: null, PersonaId: 2, NumeroDocumento: null,
-    FotografiaDriveUrl: null, NombreCompleto: 'María Torres', UsuarioId: 2,
-    Rol: 'ATC', Zona: 'Lima Este · Zona A',
-  },
-  coordinador: {
-    Operacion: 1, Autenticado: true, Token: 'mock-token-coordinador',
-    Mensaje: 'OK', Correo: null, PersonaId: 3, NumeroDocumento: null,
-    FotografiaDriveUrl: null, NombreCompleto: 'Carlos Ramos', UsuarioId: 3,
-    Rol: 'Coordinador',
-  },
-}
+  async function login(credentials: { Usuario: string; Clave: string }) {
+    loading.value = true
+    try {
+      const res = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email:    credentials.Usuario,
+          password: credentials.Clave
+        })
+      })
 
-function loadSaved(): UsuarioApp | null {
-  try {
-    const raw = localStorage.getItem(USER_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
-}
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error de autenticación')
 
-export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    usuario: loadSaved() as UsuarioApp | null,
-    loading: false,
-  }),
+      token.value = data.token
+      user.value  = data.user
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('user',  JSON.stringify(data.user))
 
-  getters: {
-    isAuthenticated: (s) => !!s.usuario?.Token,
-    token:           (s) => s.usuario?.Token ?? null,
-    nombreCompleto:  (s) => s.usuario?.NombreCompleto ?? null,
-    rol:             (s) => s.usuario?.Rol ?? null,
-    ie:              (s) => (s.usuario as UsuarioApp | null)?.IE ?? null,
-    zona:            (s) => (s.usuario as UsuarioApp | null)?.Zona ?? null,
-  },
-
-  actions: {
-    async login(payload: { Usuario: string; Clave: string }) {
-      this.loading = true
-      try {
-        if (USE_MOCK) {
-          const key = payload.Usuario.toLowerCase().trim()
-          const u   = MOCK_USERS[key]
-          if (!u || payload.Clave.toLowerCase().trim() !== key) {
-            throw new Error('Usuario o contraseña incorrectos')
-          }
-          this.usuario = u
-          localStorage.setItem(TOKEN_KEY, u.Token)
-          localStorage.setItem(USER_KEY, JSON.stringify(u))
-          return u
-        }
-        throw new Error('API no disponible en modo mock')
-      } finally {
-        this.loading = false
+      return {
+        NombreCompleto: `${data.user.nombres} ${data.user.apellidos}`,
+        Rol: data.user.rol
       }
-    },
+    } finally {
+      loading.value = false
+    }
+  }
 
-    logout() {
-      this.usuario = null
-      localStorage.removeItem(TOKEN_KEY)
-      localStorage.removeItem(USER_KEY)
-    },
-  },
+  function logout() {
+    user.value  = null
+    token.value = null
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+  }
+
+  return { user, token, loading, rol, nombreCompleto, ie, zona, login, logout }
 })

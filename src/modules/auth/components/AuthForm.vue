@@ -98,15 +98,19 @@ async function handleSubmit() {
 }
 
 async function quickLogin(rol: string) {
-  usuario.value = rol
-  clave.value   = rol
+  const creds: Record<string, { email: string; pass: string }> = {
+    tesorero:     { email: 'rhuanca@ie20124.edu.pe',  pass: 'Pae2026@' },
+    atc:          { email: 'lparedes@ugel.gob.pe',    pass: 'Pae2026@' },
+    coordinador:  { email: 'cmendoza@ugel.gob.pe',    pass: 'Pae2026@' },
+  }
+  usuario.value = creds[rol].email
+  clave.value   = creds[rol].pass
   await handleSubmit()
 }
-
 function redirect(rol: string | null) {
-  if (rol === 'Tesorero')    router.push('/tesorero/transferencias')
-  else if (rol === 'ATC')    router.push('/atc/control')
-  else                       router.push('/coordinador/panel')
+  if (rol === 'tesorero')                    router.push('/tesorero/transferencias')
+  else if (rol === 'atc')                    router.push('/atc/control')
+  else if (rol === 'coordinador_administrativo') router.push('/coordinador/panel')
 }
 </script>
 

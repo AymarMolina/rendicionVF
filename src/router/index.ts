@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 
 const routes: Array<RouteRecordRaw> = [
+  { path: '/', redirect: '/login' },
   {
     path: '/login',
     component: () => import('@/layouts/AuthLayout.vue'),
@@ -53,24 +54,21 @@ export const router = createRouter({
   routes,
 })
 
-// NOTE: useAuthStore() is called INSIDE beforeEach (not at module load time)
-// This is safe because pinia is initialized before the first navigation
 router.beforeEach((to, _from, next) => {
   const auth  = useAuthStore()
-  const isAuth = !!auth.usuario?.Token
+  const isAuth = !!auth.token
 
   if (to.name === 'login' && isAuth) {
-    return next(getRolRedirect(auth.usuario?.Rol ?? null))
+   return next(getRolRedirect(auth.user?.rol ?? null))
   }
   if (to.meta.requiresAuth && !isAuth) {
     return next({ name: 'login' })
   }
   next()
 })
-
 function getRolRedirect(rol: string | null) {
-  if (rol === 'Tesorero')    return { name: 'transferencias' }
-  if (rol === 'ATC')         return { name: 'atc-control' }
-  if (rol === 'Coordinador') return { name: 'coord-panel' }
+  if (rol === 'tesorero')                   return { name: 'transferencias' }
+  if (rol === 'atc')                        return { name: 'atc-control' }
+  if (rol === 'coordinador_administrativo') return { name: 'coord-panel' }
   return { name: 'login' }
 }
