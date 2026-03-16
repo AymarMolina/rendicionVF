@@ -99,7 +99,7 @@ async function handleSubmit() {
 
 async function quickLogin(rol: string) {
   const creds: Record<string, { email: string; pass: string }> = {
-    tesorero:     { email: 'rhuanca@ie20124.edu.pe',  pass: 'Pae2026@' },
+    tesorero:     { email: 'jquispe@ie20089.edu.pe',  pass: 'Pae2026@' },
     atc:          { email: 'lparedes@ugel.gob.pe',    pass: 'Pae2026@' },
     coordinador:  { email: 'cmendoza@ugel.gob.pe',    pass: 'Pae2026@' },
   }

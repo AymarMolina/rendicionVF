@@ -17,97 +17,203 @@
         <span class="card-title-sm">Registrar Nuevo Gasto</span>
       </div>
       <div class="card-body">
-        <div class="form-row r3">
-          <div class="form-group">
-            <label class="form-label required">Fecha de documento</label>
-            <input v-model="form.fecha" type="date" class="form-input" />
+          <!-- Toggle modo comprobante múltiple -->
+          <div class="factura-toggle-wrap">
+            <label class="factura-toggle" :class="{ active: modoFactura }">
+              <input type="checkbox" v-model="modoFactura" style="display:none" />
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              Registrar varios productos bajo un mismo comprobante
+            </label>
           </div>
-          <div class="form-group">
-            <label class="form-label required">Detalle / Producto</label>
-            <input v-model="form.concepto" type="text" class="form-input" placeholder="Ej: Verduras mercado central" />
-          </div>
-          <div class="form-group">
-            <label class="form-label required">Rubro</label>
-            <select v-model="form.rubro" class="form-input">
-              <option value="">Seleccionar...</option>
-              <option value="alimentos">Alimentos</option>
-              <option value="transporte">Transporte</option>
-              <option value="gas">Gas</option>
-              <option value="estipendio">Estipendio</option>
-              <option value="limpieza">Limpieza</option>
-              <option value="otros">Otros</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row r4" style="margin-top:14px">
-          <div class="form-group">
-            <label class="form-label">¿Tiene RUC?</label>
-            <div class="radio-group">
-              <label class="radio-opt" :class="{ active: form.tieneRuc }">
-                <input type="radio" :value="true" v-model="form.tieneRuc" /> Sí
-              </label>
-              <label class="radio-opt" :class="{ active: !form.tieneRuc }">
-                <input type="radio" :value="false" v-model="form.tieneRuc" /> No
-              </label>
+
+          <!-- ══════════════ MODO COMPROBANTE MÚLTIPLE ══════════════ -->
+          <template v-if="modoFactura">
+            <!-- Datos del comprobante (fijos para todos los ítems) -->
+            <div class="form-row r4" style="margin-bottom:16px">
+              <div class="form-group">
+                <label class="form-label required">Fecha del comprobante</label>
+                <input v-model="form.fecha" type="date" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label required">Tipo Comprobante</label>
+                <select v-model="form.tipoComprobante" class="form-input">
+                  <option value="boleta_venta">Boleta de Venta</option>
+                  <option value="factura">Factura</option>
+                  <option value="recibo_gasto">Recibo de Gasto</option>
+                  <option value="ticket">Ticket</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label required">N° de Comprobante</label>
+                <input v-model="form.nComprobante" class="form-input" placeholder="Ej: F001-0234" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Archivo (opcional)</label>
+                <button class="btn secondary btn-sm" style="height:38px" @click="fileInput?.click()">
+                  <Upload style="width:13px;height:13px" />
+                  {{ selectedFile || 'Adjuntar...' }}
+                </button>
+                <input ref="fileInput" type="file" accept="image/*,.pdf" style="display:none" @change="onFileChange" />
+              </div>
             </div>
-          </div>
-          <div class="form-group" v-if="form.tieneRuc">
-            <label class="form-label">Tipo Comprobante</label>
-           <select v-model="form.tipoComprobante" class="form-input">
-              <option value="boleta_venta">Boleta de Venta</option>
-              <option value="recibo_gasto">Recibo de Gasto</option>
-              <option value="factura">Factura</option>
-              <option value="ticket">Ticket</option>
-            </select>
-          </div>
-          <div class="form-group" v-if="form.tieneRuc">
-            <label class="form-label required">N° de Comprobante</label>
-            <input v-model="form.nComprobante" class="form-input" placeholder="Ej: E001-582" />
-          </div>
-          <div class="form-group">
-            <label class="form-label required">Monto (S/)</label>
-            <div class="monto-wrap">
-              <span class="monto-prefix">S/</span>
-              <input v-model.number="form.monto" type="number" class="form-input monto-input" placeholder="0.00" step="0.01" />
+
+            <!-- Fila para agregar un ítem -->
+            <div class="factura-item-row">
+              <div class="form-group" style="flex:2">
+                <label class="form-label required">Detalle / Producto</label>
+                <input v-model="itemActual.concepto" class="form-input" placeholder="Ej: Arroz 50kg" @keyup.enter="agregarItem" />
+              </div>
+              <div class="form-group" style="flex:1">
+                <label class="form-label required">Rubro</label>
+                <select v-model="itemActual.rubro" class="form-input">
+                  <option value="">Seleccionar...</option>
+                  <option value="alimentos">Alimentos</option>
+                  <option value="transporte">Transporte</option>
+                  <option value="gas">Gas</option>
+                  <option value="estipendio">Estipendio</option>
+                  <option value="limpieza">Limpieza</option>
+                  <option value="otros">Otros</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex:1">
+                <label class="form-label required">Monto (S/)</label>
+                <div class="monto-wrap">
+                  <span class="monto-prefix">S/</span>
+                  <input v-model.number="itemActual.monto" type="number" class="form-input monto-input"
+                    placeholder="0.00" step="0.01" @keyup.enter="agregarItem" />
+                </div>
+              </div>
+              <div class="form-group" style="padding-top:20px;flex-shrink:0">
+                <button class="btn secondary btn-sm" @click="agregarItem">
+                  <Plus class="btn-ico" /> Añadir
+                </button>
+              </div>
             </div>
-            <div v-if="montoError" class="form-error">⚠ Estás excediendo el monto por rubro establecido</div>
-          </div>
-        </div>
 
-        <div class="upload-zone" :class="{ 'upload-required': intentoGuardar && form.tieneRuc && !selectedFile }" @click="fileInput?.click()">
-          <Upload class="upload-ico" />
-          <div class="upload-text">
-            <strong>Fotografía / PDF del comprobante</strong><br/>
-            Haga clic o arrastre el archivo aquí
-          </div>
-          <input ref="fileInput" type="file" accept="image/*,.pdf" style="display:none" @change="onFileChange" />
-        </div>
-        <div v-if="selectedFile" class="file-ok">
-          <CheckCircle class="file-ico" /> Archivo seleccionado: <strong>{{ selectedFile }}</strong>
-        </div>
+            <!-- Lista acumulada de ítems -->
+            <div v-if="itemsFactura.length > 0" class="items-factura">
+              <div class="items-header">
+                <span>{{ itemsFactura.length }} producto(s)</span>
+                <strong>Total: {{ fmt(itemsFactura.reduce((s, i) => s + i.monto, 0)) }}</strong>
+              </div>
+              <div v-for="(item, idx) in itemsFactura" :key="idx" class="item-row">
+                <span class="chip-rubro">{{ item.rubro }}</span>
+                <span class="item-concepto">{{ item.concepto }}</span>
+                <span class="item-monto">{{ fmt(item.monto) }}</span>
+                <button class="item-del" @click="itemsFactura.splice(idx, 1)" title="Quitar">
+                  <X style="width:12px;height:12px" />
+                </button>
+              </div>
+            </div>
 
-        <div class="form-actions">
-          <div v-if="editandoId" class="edit-banner">
-            <Pencil style="width:14px;height:14px" /> Editando gasto — los cambios reemplazarán el registro actual
-          </div>
-          <button class="btn primary" @click="agregarGasto">
-            <component :is="editandoId ? Pencil : Plus" class="btn-ico" />
-            {{ editandoId ? 'Actualizar Gasto' : 'Agregar Gasto' }}
-          </button>
+            <div class="form-actions">
+              <button class="btn primary" @click="registrarComprobante" :disabled="itemsFactura.length === 0 || guardandoMultiple">
+                <Plus class="btn-ico" />
+                {{ guardandoMultiple ? 'Registrando...' : `Registrar ${itemsFactura.length} gasto(s)` }}
+              </button>
+              <button class="btn secondary" @click="cancelarModoFactura">Cancelar</button>
+            </div>
+          </template>
 
-          <button
-            v-if="editandoId && form.rubro === 'transporte'"
-            class="btn secondary"
-            @click="abrirEditarMovilidad"
-          >
-            <MapPin class="btn-ico" /> Editar Puntos de Movilidad
-          </button>
+          <!-- ══════════════ MODO NORMAL (sin cambios) ══════════════ -->
+          <template v-else>
+            <div class="form-row r3">
+              <div class="form-group">
+                <label class="form-label required">Fecha de documento</label>
+                <input v-model="form.fecha" type="date" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label required">Detalle / Producto</label>
+                <input v-model="form.concepto" type="text" class="form-input" placeholder="Ej: Verduras mercado central" />
+              </div>
+              <div class="form-group">
+                <label class="form-label required">Rubro</label>
+                <select v-model="form.rubro" class="form-input">
+                  <option value="">Seleccionar...</option>
+                  <option value="alimentos">Alimentos</option>
+                  <option value="transporte">Transporte</option>
+                  <option value="gas">Gas</option>
+                  <option value="estipendio">Estipendio</option>
+                  <option value="limpieza">Limpieza</option>
+                  <option value="otros">Otros</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row r4" style="margin-top:14px">
+              <div class="form-group">
+                <label class="form-label">¿Tiene RUC?</label>
+                <div class="radio-group">
+                  <label class="radio-opt" :class="{ active: form.tieneRuc }">
+                    <input type="radio" :value="true" v-model="form.tieneRuc" /> Sí
+                  </label>
+                  <label class="radio-opt" :class="{ active: !form.tieneRuc }">
+                    <input type="radio" :value="false" v-model="form.tieneRuc" /> No
+                  </label>
+                </div>
+              </div>
+              <div class="form-group" v-if="form.tieneRuc">
+                <label class="form-label">Tipo Comprobante</label>
+                <select v-model="form.tipoComprobante" class="form-input">
+                  <option value="boleta_venta">Boleta de Venta</option>
+                  <option value="recibo_gasto">Recibo de Gasto</option>
+                  <option value="factura">Factura</option>
+                  <option value="ticket">Ticket</option>
+                </select>
+              </div>
+              <div class="form-group" v-if="form.tieneRuc">
+                <label class="form-label required">N° de Comprobante</label>
+                <input v-model="form.nComprobante" class="form-input" placeholder="Ej: E001-582" />
+              </div>
+              <div class="form-group">
+                <label class="form-label required">Monto (S/)</label>
+                <div class="monto-wrap">
+                  <span class="monto-prefix">S/</span>
+                  <input v-model.number="form.monto" type="number" class="form-input monto-input" placeholder="0.00" step="0.01" />
+                </div>
+                <div v-if="montoError" class="form-error">⚠ Estás excediendo el monto por rubro establecido</div>
+              </div>
+            </div>
 
-          <button v-if="editandoId" class="btn secondary" @click="cancelarEdicion">
-            Cancelar Edición
-          </button>
+            <div class="upload-zone" :class="{ 'upload-required': intentoGuardar && form.tieneRuc && !selectedFile }" @click="fileInput?.click()">
+              <Upload class="upload-ico" />
+              <div class="upload-text">
+                <strong>Fotografía / PDF del comprobante</strong><br/>
+                Haga clic o arrastre el archivo aquí
+              </div>
+              <input ref="fileInput" type="file" accept="image/*,.pdf" style="display:none" @change="onFileChange" />
+            </div>
+
+            <div v-if="previewUrl" class="preview-wrap">
+              <button class="preview-close" @click="limpiarArchivo" title="Quitar archivo">
+                <X style="width:14px;height:14px" />
+              </button>
+              <img v-if="previewTipo === 'imagen'" :src="previewUrl" class="preview-img" alt="Vista previa" />
+              <iframe v-else :src="previewUrl" class="preview-pdf" />
+              <div class="preview-label">
+                <Paperclip style="width:13px;height:13px" /> {{ selectedFile }}
+              </div>
+            </div>
+            <div v-if="selectedFile" class="file-ok">
+              <CheckCircle class="file-ico" /> Archivo seleccionado: <strong>{{ selectedFile }}</strong>
+            </div>
+
+            <div class="form-actions">
+              <div v-if="editandoId" class="edit-banner">
+                <Pencil style="width:14px;height:14px" /> Editando gasto — los cambios reemplazarán el registro actual
+              </div>
+              <button class="btn primary" @click="agregarGasto">
+                <component :is="editandoId ? Pencil : Plus" class="btn-ico" />
+                {{ editandoId ? 'Actualizar Gasto' : 'Agregar Gasto' }}
+              </button>
+              <button v-if="editandoId && form.rubro === 'transporte'" class="btn secondary" @click="abrirEditarMovilidad">
+                <MapPin class="btn-ico" /> Editar Puntos de Movilidad
+              </button>
+              <button v-if="editandoId" class="btn secondary" @click="cancelarEdicion">
+                Cancelar Edición
+              </button>
+            </div>
+          </template>
         </div>
-      </div>
     </div>
 
     <div class="card">
@@ -174,7 +280,6 @@
           <Info class="alert-ico" />
           <span>Use este formulario cuando el proveedor no pueda emitir comprobante SUNAT.</span>
         </div>
-
         <div class="form-row r3" style="margin-bottom:14px">
           <div class="form-group">
             <label class="form-label required">Fecha</label>
@@ -332,6 +437,63 @@ const presupInfo       = ref<any>(null)
 const movilFlow = ref<'ruc' | 'dj' | null>(null)
 const editandoId = ref<number | null>(null)
 
+  const modoFactura      = ref(false)
+const guardandoMultiple = ref(false)
+const itemsFactura     = ref<{ concepto: string; rubro: string; monto: number }[]>([])
+const itemActual       = reactive({ concepto: '', rubro: '', monto: 0 })
+
+function agregarItem() {
+  if (!itemActual.concepto || !itemActual.rubro || !itemActual.monto) {
+    toast.warning('Completa el ítem', 'Detalle, rubro y monto son requeridos')
+    return
+  }
+  itemsFactura.value.push({ ...itemActual })
+  itemActual.concepto = ''
+  itemActual.rubro    = ''
+  itemActual.monto    = 0
+}
+
+async function registrarComprobante() {
+  if (!form.nComprobante.trim() || !form.fecha) {
+    toast.warning('Campos incompletos', 'Fecha y número de comprobante son requeridos')
+    return
+  }
+  if (itemsFactura.value.length === 0) return
+
+  guardandoMultiple.value = true
+  try {
+    for (const item of itemsFactura.value) {
+      await store.registrarGasto({
+        transferencia_id: selectedTransfId.value,
+        fecha_documento:  form.fecha,
+        concepto:         item.concepto,
+        rubro:            item.rubro,
+        tiene_ruc:        true,
+        tipo_comprobante: form.tipoComprobante,
+        num_comprobante:  form.nComprobante,
+        monto:            item.monto,
+      }, archivoFile.value)
+    }
+    toast.success('Gastos registrados', `${itemsFactura.value.length} ítems bajo comprobante ${form.nComprobante}`)
+    await store.cargarGastos(selectedTransfId.value)
+    cancelarModoFactura()
+  } catch (e: any) {
+    toast.error('Error', e.message)
+  } finally {
+    guardandoMultiple.value = false
+  }
+}
+
+function cancelarModoFactura() {
+  modoFactura.value      = false
+  itemsFactura.value     = []
+  itemActual.concepto    = ''
+  itemActual.rubro       = ''
+  itemActual.monto       = 0
+  form.nComprobante      = ''
+  limpiarArchivo()
+}
+
 const form = reactive({
   fecha: '', concepto: '', rubro: '' as RubroGasto,
   tieneRuc: true, tipoComprobante: 'boleta_venta', nComprobante: '', monto: 0,
@@ -357,6 +519,32 @@ const mov = reactive({
 const djRegistros  = ref<any[]>([])
 const movRegistros = ref<any[]>([])
 const gastosActivos = computed(() => store.gastos)
+
+const previewUrl  = ref<string>('')
+const previewTipo = ref<'imagen' | 'pdf'>('imagen')
+
+function onFileChange(e: Event) {
+  const f = (e.target as HTMLInputElement).files?.[0]
+  if (f) {
+    selectedFile.value = f.name
+    archivoFile.value  = f
+
+    // Revocar URL anterior si existe
+    if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+
+    previewUrl.value  = URL.createObjectURL(f)
+    previewTipo.value = f.type === 'application/pdf' ? 'pdf' : 'imagen'
+  }
+}
+
+function limpiarArchivo() {
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+  previewUrl.value   = ''
+  selectedFile.value = ''
+  archivoFile.value  = null
+  if (fileInput.value) fileInput.value.value = ''
+}
+
 onMounted(async () => {
   form.fecha = new Date().toISOString().split('T')[0]
   dj.fecha   = form.fecha
@@ -407,13 +595,6 @@ function abrirEditarMovilidad() {
   mov.iiee    = form.mov_iiee ?? 'IE N° 20124'
   movilFlow.value = 'ruc'
   showMovilidad.value = true
-}
-function onFileChange(e: Event) {
-  const f = (e.target as HTMLInputElement).files?.[0]
-  if (f) {
-    selectedFile.value = f.name
-    archivoFile.value  = f
-  }
 }
 
 async function agregarGasto() {
@@ -622,6 +803,7 @@ function cancelarEdicion() {
   selectedFile.value = ''
   archivoFile.value  = null
   intentoGuardar.value = false
+  limpiarArchivo()
 }
 
 async function agregarMov() {
@@ -768,4 +950,97 @@ td{
   width: 100%;
   margin-bottom: 8px;
 }
+.preview-wrap {
+  position: relative;
+  margin-top: 12px;
+  border: 1.5px solid #d4dae8;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fafbfd;
+}
+.preview-close {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: rgba(220,38,38,.9);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+  transition: background .15s;
+}
+.preview-close:hover { background: #b91c1c; }
+.preview-img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  display: block;
+  background: #f0f2f8;
+}
+.preview-pdf {
+  width: 100%;
+  height: 340px;
+  border: none;
+  display: block;
+}
+.preview-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #6b7597;
+  font-weight: 600;
+  border-top: 1px solid #d4dae8;
+  background: #fff;
+}
+.factura-toggle-wrap { margin-bottom: 18px; }
+.factura-toggle {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 13px; font-weight: 600; color: #1a2340; cursor: pointer;
+  background: #f0f4ff; border: 1.5px solid #d4dae8;
+  border-radius: 8px; padding: 8px 14px; transition: all .2s;
+}
+.factura-toggle.active { background: #dbeafe; border-color: #2c4fd4; color: #1a2f6e; }
+.toggle-track {
+  width: 34px; height: 18px; background: #d4dae8;
+  border-radius: 9px; position: relative; transition: background .2s; flex-shrink: 0;
+}
+.factura-toggle.active .toggle-track { background: #2c4fd4; }
+.toggle-thumb {
+  position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; background: #fff;
+  border-radius: 50%; transition: left .2s;
+}
+.factura-toggle.active .toggle-thumb { left: 18px; }
+.factura-item-row {
+  display: flex; gap: 12px; align-items: flex-end;
+  margin-top: 16px; background: #fafbfd;
+  border: 1px solid #d4dae8; border-radius: 10px; padding: 14px;
+}
+.items-factura {
+  margin-top: 14px;
+  border: 1.5px solid #2c4fd4;
+  border-radius: 10px; overflow: hidden;
+}
+.items-header {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #e8edf9; padding: 8px 14px;
+  font-size: 12.5px; color: #1a2f6e;
+}
+.item-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; border-top: 1px solid #f0f2f8;
+  font-size: 13px;
+}
+.item-concepto { flex: 1; color: #1a2340; font-weight: 600; }
+.item-monto { color: #1a2340; font-weight: 700; min-width: 90px; text-align: right; }
+.item-del {
+  background: #fee2e2; border: none; border-radius: 5px;
+  padding: 4px; cursor: pointer; display: flex; color: #dc2626; transition: all .15s;
+}
+.item-del:hover { background: #dc2626; color: #fff; }
 </style>

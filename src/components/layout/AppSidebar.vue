@@ -69,6 +69,7 @@ const navItems = computed(() => {
     { to:'/tesorero/transferencias', label:'Transferencias',      icon: ArrowLeftRight },
     { to:'/tesorero/gastos',         label:'Gastos y Comprobantes',icon: FileText },
     { to:'/tesorero/rendicion',      label:'Rendición de Cuentas', icon: CheckSquare },
+    { to: '/tesorero/reuniones', label: 'Reuniones', icon: Users }
   ]
   if (auth.rol === 'ATC') return [
     { to:'/atc/control',        label:'Centro de Control',   icon: LayoutDashboard },

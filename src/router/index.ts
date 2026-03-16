@@ -20,6 +20,7 @@ const routes: Array<RouteRecordRaw> = [
       { path: 'transferencias', name: 'transferencias', component: () => import('@/modules/tesorero/pages/TransferenciasPage.vue') },
       { path: 'gastos',         name: 'gastos',         component: () => import('@/modules/tesorero/pages/GastosPage.vue') },
       { path: 'rendicion',      name: 'rendicion',      component: () => import('@/modules/tesorero/pages/RendicionPage.vue') },
+      { path: 'reuniones',      name: 'reuniones',      component: () => import('@/modules/tesorero/pages/ReunionesPage.vue') },
     ],
   },
   {

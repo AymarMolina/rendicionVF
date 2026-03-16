@@ -324,8 +324,9 @@ const rubrosResumen = computed(() => {
 async function abrirRendicion(id: any) {
   detalleId.value = id
   await rendicionStore.cargar(id)
+  console.log('rendicion datos:', rendicionStore.datos)  // ← agrega esto
   if (resumen.value) {
-    efectivo.value     = resumen.value.efectivo_en_caja ?? 0
+    efectivo.value = resumen.value.efectivo_en_caja ?? 0
     observaciones.value = ''
   }
 }
