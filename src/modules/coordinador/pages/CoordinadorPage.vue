@@ -1,7 +1,6 @@
 <template>
   <div class="page">
 
-    <!-- ── Header ─────────────────────────────────────────────────────── -->
     <div class="page-header">
       <div>
         <h1 class="page-title">Panel del Coordinador</h1>
@@ -9,7 +8,6 @@
       </div>
     </div>
 
-    <!-- ── Import card ────────────────────────────────────────────────── -->
     <div class="import-card mb">
       <div class="import-card-header">
         <div class="import-title-wrap">
@@ -54,7 +52,6 @@
           </button>
         </div>
 
-        <!-- Resultado import -->
         <div v-if="resultadoImport" class="resultado-wrap">
           <div class="resultado-header" :class="resultadoImport.ok ? 'ok' : 'error'">
             <CheckCircle v-if="resultadoImport.ok" style="width:15px;height:15px;flex-shrink:0" />
@@ -70,7 +67,6 @@
       </div>
     </div>
 
-    <!-- ── Ciclos ──────────────────────────────────────────────────────── -->
     <div class="section-title-row mb-sm">
       <h2 class="section-title">Ciclos del año {{ anioActual }}</h2>
       <button class="btn secondary btn-sm" @click="cargarCiclos" :disabled="loadingCiclos">
@@ -115,7 +111,6 @@
           </div>
         </div>
 
-        <!-- Barra de progreso de liberación -->
         <div class="progress-wrap" v-if="ciclo.total_asignaciones > 0">
           <div class="progress-bar">
             <div class="progress-fill" :style="{ width: pctLiberado(ciclo) + '%' }" />
@@ -137,9 +132,6 @@
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- MODAL DE LIBERACIÓN                                               -->
-    <!-- ══════════════════════════════════════════════════════════════════ -->
     <Teleport to="body">
       <div v-if="modalVisible" class="modal-overlay" @click.self="cerrarModal">
         <div class="modal">
@@ -152,7 +144,6 @@
             <button class="modal-close" @click="cerrarModal"><X /></button>
           </div>
 
-          <!-- Fecha de envío global -->
           <div class="modal-fecha-row">
             <label class="field-label">
               <CalendarDays style="width:14px;height:14px" />
@@ -166,7 +157,6 @@
           </div>
 
           <template v-else>
-            <!-- Tabla editable de módulos -->
             <div class="modal-table-wrap">
               <table class="modal-table">
                 <thead>
@@ -294,7 +284,6 @@ const RUBROS = [
   { key: 'presup_otros',      label: 'Otros'      },
 ]
 
-// ── Estado general ────────────────────────────────────────────────────────
 const anioActual      = new Date().getFullYear()
 const fileInput       = ref<HTMLInputElement>()
 const archivoSeleccionado = ref<File | null>(null)
@@ -305,7 +294,6 @@ const resultadoImport = ref<any>(null)
 const ciclos       = ref<any[]>([])
 const loadingCiclos = ref(false)
 
-// ── Estado modal ──────────────────────────────────────────────────────────
 const modalVisible      = ref(false)
 const cicloActivo       = ref<any>(null)
 const modulosEditables  = ref<any[]>([])
@@ -313,7 +301,6 @@ const loadingModulos    = ref(false)
 const liberando         = ref(false)
 const fechaEnvio        = ref(hoyISO())
 
-// ── Helpers ───────────────────────────────────────────────────────────────
 function hoyISO() {
   return new Date().toISOString().split('T')[0]
 }
@@ -344,7 +331,6 @@ function pctLiberado(c: any) {
   return Math.round((c.asignaciones_liberadas / c.total_asignaciones) * 100)
 }
 
-// ── Computed modal ────────────────────────────────────────────────────────
 const modulosPendientes = computed(() =>
   modulosEditables.value.filter(m => m.transferencias_creadas === 0)
 )
@@ -358,10 +344,8 @@ const montoTotalALiberar = computed(() =>
     s + Number(m.num_transferencias || 0) * Number(m.monto_x_transferencia || 0), 0)
 )
 
-// ── Lifecycle ─────────────────────────────────────────────────────────────
 onMounted(() => cargarCiclos())
 
-// ── Ciclos ────────────────────────────────────────────────────────────────
 async function cargarCiclos() {
   loadingCiclos.value = true
   try {
@@ -374,7 +358,6 @@ async function cargarCiclos() {
   }
 }
 
-// ── Import ────────────────────────────────────────────────────────────────
 function onFileChange(e: Event) {
   const f = (e.target as HTMLInputElement).files?.[0]
   if (f) seleccionarArchivo(f)
@@ -417,7 +400,6 @@ async function importar() {
   }
 }
 
-// ── Modal liberar ─────────────────────────────────────────────────────────
 async function abrirModalLiberar(ciclo: any) {
   cicloActivo.value  = ciclo
   modalVisible.value = true
@@ -428,7 +410,6 @@ async function abrirModalLiberar(ciclo: any) {
   try {
     const res  = await fetch(`${BASE}/importar/ciclos/${ciclo.id}/modulos`, { headers: headers() })
     const data = await res.json()
-    // Clonar para edición local
     modulosEditables.value = data.map((m: any) => ({ ...m }))
   } catch {
     toast.error('Error', 'No se pudieron cargar los módulos')

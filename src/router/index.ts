@@ -44,10 +44,11 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/layouts/AppLayout.vue'),
     meta: { requiresAuth: true },
     children: [
-      { path: '', redirect: { name: 'coord-panel' } },
+      { path: '', redirect: { name: 'dashboard-coordinador' } },
       { path: 'importar-transferencia', name: 'importar-transferencia', component: () => import('@/modules/coordinador/pages/CoordinadorPage.vue') },
       { path: 'asignar-tesorero', name: 'asignar-tesorero', component: () => import('@/modules/coordinador/pages/AsignarTesorero.vue') },
       { path: 'asignar-atc', name: 'asignar-atc', component: () => import('@/modules/coordinador/pages/AsignarATC.vue') },
+      { path: 'dashboard-coordinador', name: 'dashboard-coordinador', component: () => import('@/modules/coordinador/pages/Dashboardcoordinador.vue') },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/login' },

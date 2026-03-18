@@ -107,9 +107,11 @@ const navItems = computed(() => {
     { to: '/atc/revision',           label: 'Revision Rendiciones',           icon: UtensilsCrossed },
   ]
   if (auth.rol === 'Coordinador') return [
+    { to: '/coordinador/dashboard-coordinador', label: 'Panel Principal',     icon: ClipboardList },
     { to: '/coordinador/importar-transferencia', label: 'Importar Transferencia',     icon: ClipboardList },
     { to: '/coordinador/asignar-tesorero', label: 'Asignar tesorero',     icon: ClipboardList },
     { to: '/coordinador/asignar-atc', label: 'Asignar ATC',     icon: ClipboardList },
+
   ]
   return []
 })
