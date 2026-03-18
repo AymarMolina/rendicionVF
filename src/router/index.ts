@@ -21,6 +21,7 @@ const routes: Array<RouteRecordRaw> = [
       { path: 'gastos',         name: 'gastos',         component: () => import('@/modules/tesorero/pages/GastosPage.vue') },
       { path: 'rendicion',      name: 'rendicion',      component: () => import('@/modules/tesorero/pages/RendicionPage.vue') },
       { path: 'reuniones',      name: 'reuniones',      component: () => import('@/modules/tesorero/pages/ReunionesPage.vue') },
+      { path: 'acta-asamblea',      name: 'acta-asamblea',      component: () => import('@/modules/tesorero/pages/Actasview.vue') }
     ],
   },
   {
@@ -35,6 +36,7 @@ const routes: Array<RouteRecordRaw> = [
       { path: 'anexos',         name: 'atc-anexos',         component: () => import('@/modules/atc/pages/RevisionAnexosPage.vue') },
       { path: 'capacitaciones', name: 'atc-capacitaciones', component: () => import('@/modules/atc/pages/CapacitacionesPage.vue') },
       { path: 'menu',           name: 'atc-menu',           component: () => import('@/modules/atc/pages/MenuPage.vue') },
+      { path: 'revision',           name: 'revision',           component: () => import('@/modules/atc/pages/RevisionPage.vue') },
     ],
   },
   {
@@ -43,8 +45,9 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true },
     children: [
       { path: '', redirect: { name: 'coord-panel' } },
-      { path: 'panel',       name: 'coord-panel',       component: () => import('@/modules/coordinador/pages/PanelEjecutivoPage.vue') },
-      { path: 'expedientes', name: 'coord-expedientes', component: () => import('@/modules/coordinador/pages/ExpedientesPage.vue') },
+      { path: 'importar-transferencia', name: 'importar-transferencia', component: () => import('@/modules/coordinador/pages/CoordinadorPage.vue') },
+      { path: 'asignar-tesorero', name: 'asignar-tesorero', component: () => import('@/modules/coordinador/pages/AsignarTesorero.vue') },
+      { path: 'asignar-atc', name: 'asignar-atc', component: () => import('@/modules/coordinador/pages/AsignarATC.vue') },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/login' },

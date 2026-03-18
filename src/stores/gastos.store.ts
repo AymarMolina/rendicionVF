@@ -5,14 +5,14 @@ import { useAuthStore } from './auth.store'
 const BASE = 'http://localhost:3000/api'
 
 export const useGastosStore = defineStore('gastos', () => {
-  const auth         = useAuthStore()
-  const gastos       = ref<any[]>([])
+  const auth           = useAuthStore()
+  const gastos         = ref<any[]>([])
   const transferencias = ref<any[]>([])
-  const loading      = ref(false)
+  const loading        = ref(false)
 
   function headers() {
     return {
-      'Content-Type': 'application/json',
+      'Content-Type':  'application/json',
       'Authorization': `Bearer ${auth.token}`
     }
   }
@@ -22,7 +22,7 @@ export const useGastosStore = defineStore('gastos', () => {
     try {
       const res  = await fetch(`${BASE}/transferencias`, { headers: headers() })
       const data = await res.json()
-      transferencias.value = data
+      transferencias.value = Array.isArray(data) ? data : []
     } finally {
       loading.value = false
     }
@@ -33,33 +33,40 @@ export const useGastosStore = defineStore('gastos', () => {
     try {
       const res  = await fetch(`${BASE}/gastos?transferencia_id=${transferenciaId}`, { headers: headers() })
       const data = await res.json()
-      gastos.value = data
+      gastos.value = Array.isArray(data) ? data : []
     } finally {
       loading.value = false
     }
   }
 
   async function checkPresupuesto(transferenciaId: string | number, rubro: string, monto: number) {
-    const res  = await fetch(
+    const res = await fetch(
       `${BASE}/gastos/check-presupuesto?transferencia_id=${transferenciaId}&rubro=${rubro}&monto=${monto}`,
       { headers: headers() }
     )
     return await res.json()
   }
-
   async function registrarGasto(payload: any, archivo?: File | null) {
     const formData = new FormData()
 
-    Object.entries(payload).forEach(([k, v]) => {
+    const itemsArray = payload.items
+    const payloadSinItems = { ...payload }
+    delete payloadSinItems.items
+
+    Object.entries(payloadSinItems).forEach(([k, v]) => {
       if (v !== null && v !== undefined) formData.append(k, String(v))
     })
+
+    if (itemsArray && Array.isArray(itemsArray)) {
+      formData.append('items', JSON.stringify(itemsArray))
+    }
 
     if (archivo) formData.append('archivo', archivo)
 
     const res = await fetch(`${BASE}/gastos`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${auth.token}` }, 
-      body: formData
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${auth.token}` },
+      body:    formData
     })
 
     const data = await res.json()
@@ -67,9 +74,26 @@ export const useGastosStore = defineStore('gastos', () => {
     return data
   }
 
+  async function actualizarGasto(id: number, payload: any, archivo?: File | null) {
+    const formData = new FormData()
+    Object.entries(payload).forEach(([k, v]) => {
+      if (v !== null && v !== undefined) formData.append(k, String(v))
+    })
+    if (archivo) formData.append('archivo', archivo)
+
+    const res = await fetch(`${BASE}/gastos/${id}`, {
+      method:  'PATCH',
+      headers: { 'Authorization': `Bearer ${auth.token}` },
+      body:    formData
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Error al actualizar')
+    return data
+  }
+
   async function eliminarGasto(id: number) {
     const res = await fetch(`${BASE}/gastos/${id}`, {
-      method: 'DELETE',
+      method:  'DELETE',
       headers: headers()
     })
     const data = await res.json()
@@ -77,22 +101,10 @@ export const useGastosStore = defineStore('gastos', () => {
     gastos.value = gastos.value.filter(g => g.id !== id)
     return data
   }
-async function actualizarGasto(id: number, payload: any, archivo?: File | null) {
-  const formData = new FormData()
-  Object.entries(payload).forEach(([k, v]) => {
-    if (v !== null && v !== undefined) formData.append(k, String(v))
-  })
-  if (archivo) formData.append('archivo', archivo)
 
-  const res = await fetch(`${BASE}/gastos/${id}`, {
-    method: 'PATCH',
-    headers: { 'Authorization': `Bearer ${auth.token}` },
-    body: formData
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || 'Error al actualizar')
-  return data
-}
-
-return { gastos, transferencias, loading, cargarTransferencias, cargarGastos, checkPresupuesto, registrarGasto, actualizarGasto, eliminarGasto }
+  return {
+    gastos, transferencias, loading,
+    cargarTransferencias, cargarGastos,
+    checkPresupuesto, registrarGasto, actualizarGasto, eliminarGasto
+  }
 })

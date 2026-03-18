@@ -36,7 +36,6 @@
       <span v-else class="spinner-wrap"><span class="spinner" /> Validando...</span>
     </button>
 
-    <!-- Demo shortcuts -->
     <div class="demo-section">
       <div class="demo-title">Acceso Rápido – Demo</div>
       <div class="demo-grid">
@@ -99,7 +98,7 @@ async function handleSubmit() {
 
 async function quickLogin(rol: string) {
   const creds: Record<string, { email: string; pass: string }> = {
-    tesorero:     { email: 'jquispe@ie20089.edu.pe',  pass: 'Pae2026@' },
+    tesorero:     { email: '46317029@pae.pe',  pass: 'Pae2026@' },
     atc:          { email: 'lparedes@ugel.gob.pe',    pass: 'Pae2026@' },
     coordinador:  { email: 'cmendoza@ugel.gob.pe',    pass: 'Pae2026@' },
   }
@@ -110,7 +109,7 @@ async function quickLogin(rol: string) {
 function redirect(rol: string | null) {
   if (rol === 'tesorero')                    router.push('/tesorero/transferencias')
   else if (rol === 'atc')                    router.push('/atc/control')
-  else if (rol === 'coordinador_administrativo') router.push('/coordinador/panel')
+  else if (rol === 'coordinador_administrativo') router.push('/coordinador/importar-transferencia')
 }
 </script>
 

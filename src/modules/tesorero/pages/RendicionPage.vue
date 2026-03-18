@@ -7,56 +7,95 @@
       </div>
     </div>
 
+    <!-- ── Lista de transferencias ─────────────────────────────────────── -->
     <div v-if="!detalleId">
-
       <div v-if="loadingTransf" class="loading-row">
         <div class="spinner-lg" /> Cargando transferencias...
       </div>
 
-      <div
-        v-else
-        v-for="t in transferenciaStore.transferencias"
-        :key="t.id"
-        class="rendicion-card"
-        @click="abrirRendicion(t.id)"
-      >
-        <div class="rc-left">
-          <div class="rc-title">
-            {{ t.codigo }}
-            <span class="rc-ciclo">{{ t.ciclo }}</span>
-          </div>
-          <div class="rc-sub">{{ t.institucion }}</div>
+      <template v-else>
+        <!-- Filtro de nivel -->
+        <div class="nivel-bar">
+          <button class="pill" :class="{ active: nivelFiltro === '' }" @click="nivelFiltro = ''">Todos</button>
+          <button
+            v-for="n in nivelesDisponibles"
+            :key="n"
+            class="pill"
+            :class="[{ active: nivelFiltro === n }, n]"
+            @click="nivelFiltro = nivelFiltro === n ? '' : n"
+          >
+            {{ nivelLabel(n) }}
+            <span class="pill-cod">{{ codigoModularDe(n) }}</span>
+          </button>
         </div>
-        <div class="rc-right">
-          <div class="rc-monto-wrap">
-            <div class="rc-monto-label">Transferido</div>
-            <div class="rc-monto">{{ fmt(t.monto) }}</div>
-          </div>
-          <div class="rc-monto-wrap">
-            <div class="rc-monto-label">Gastado</div>
-            <div class="rc-monto">{{ fmt(t.total_gastado ?? 0) }}</div>
-          </div>
-          <div class="rc-monto-wrap">
-            <div class="rc-saldo-label">Saldo</div>
-            <div class="rc-saldo" :class="(t.saldo ?? 0) > 0 ? 'orange' : 'green'">
-              {{ fmt(t.saldo ?? 0) }}
+
+        <div
+          v-for="t in transfFiltradas"
+          :key="t.id"
+          class="rendicion-card"
+          @click="abrirRendicion(t.id)"
+        >
+          <div class="rc-left">
+            <div class="rc-title">
+              <span class="nivel-badge" :class="t.nivel">{{ nivelLabel(t.nivel) }}</span>
+              {{ t.codigo }}
+              <span class="rc-ciclo">{{ t.ciclo }}</span>
+              <span class="transf-counter">{{ t.numero }}/{{ t.num_transferencias }}</span>
+            </div>
+            <div class="rc-sub">
+              <span class="cod-modular">{{ t.codigo_modular }}</span>
+              · {{ t.institucion }}
             </div>
           </div>
-          <StatusBadge :status="t.estado" />
-          <button class="icon-btn"><Eye class="btn-ico" /></button>
+          <div class="rc-right">
+            <div class="rc-monto-wrap">
+              <div class="rc-monto-label">Transferido</div>
+              <div class="rc-monto">{{ fmt(t.monto) }}</div>
+            </div>
+            <div class="rc-monto-wrap">
+              <div class="rc-monto-label">Gastado</div>
+              <div class="rc-monto">{{ fmt(t.total_gastado ?? 0) }}</div>
+            </div>
+            <div class="rc-monto-wrap">
+              <div class="rc-saldo-label">Saldo</div>
+              <div class="rc-saldo" :class="(t.saldo ?? 0) > 0 ? 'orange' : 'green'">
+                {{ fmt(t.saldo ?? 0) }}
+              </div>
+            </div>
+            <StatusBadge :status="t.estado" />
+            <button class="icon-btn"><Eye class="btn-ico" /></button>
+          </div>
         </div>
-      </div>
+
+        <div v-if="transfFiltradas.length === 0" class="empty-state">
+          Sin transferencias para el nivel seleccionado
+        </div>
+      </template>
     </div>
 
+    <!-- ── Detalle de rendición ─────────────────────────────────────────── -->
     <div v-else>
       <div class="back-row">
         <button class="btn secondary btn-sm" @click="cerrarDetalle">
           <ArrowLeft class="btn-ico" /> Volver
         </button>
         <span class="detail-title">
-          Rendición — {{ rendicionStore.datos?.resumen?.codigo_transferencia ?? detalleId }}
+          Rendición — {{ resumen?.codigo_transferencia ?? detalleId }}
         </span>
-        <StatusBadge v-if="rendicionStore.datos?.resumen" :status="rendicionStore.datos.resumen.estado" />
+        <StatusBadge v-if="resumen" :status="resumen.estado" />
+      </div>
+
+      <!-- Info bar de la transferencia -->
+      <div class="transf-info-bar" v-if="resumen">
+        <span class="nivel-badge" :class="resumen.nivel">{{ nivelLabel(resumen.nivel) }}</span>
+        <span class="cod-modular">{{ resumen.codigo_modular }}</span>
+        <span class="sep">·</span>
+        <span class="t-cod">{{ resumen.codigo_transferencia }}</span>
+        <span class="transf-counter">{{ resumen.numero }}/{{ resumen.num_transferencias }}</span>
+        <span class="sep">·</span>
+        <span class="ciclo-txt">{{ resumen.ciclo }}</span>
+        <span class="sep">·</span>
+        <span class="ie-txt">{{ resumen.nombre_institucion }}</span>
       </div>
 
       <div v-if="rendicionStore.loading" class="loading-row">
@@ -64,18 +103,21 @@
       </div>
 
       <template v-else>
+        <!-- Banners de estado -->
         <div v-if="resumen?.estado === 'enviada'" class="estado-banner enviada">
           <Send style="width:16px;height:16px;flex-shrink:0" />
-          Rendición enviada al ATC — en espera de revisión. Puedes modificarla si es necesario.
+          Rendición enviada al ATC — en espera de revisión.
         </div>
         <div v-if="resumen?.estado === 'observada'" class="estado-banner observada">
           <AlertCircle style="width:16px;height:16px;flex-shrink:0" />
-          El ATC devolvió esta rendición con observaciones. Revisa los comentarios abajo, corrige y reenvía.
+          El ATC devolvió esta rendición con observaciones. Corrige y reenvía.
         </div>
         <div v-if="resumen?.estado === 'aprobada'" class="estado-banner aprobada">
           <CheckCircle style="width:16px;height:16px;flex-shrink:0" />
-          Rendición aprobada por el ATC. No puede modificarse.
+          Rendición aprobada por el ATC.
         </div>
+
+        <!-- KPIs financieros -->
         <div class="kpi-grid">
           <div class="kpi-card left-green">
             <div class="kpi-label">(+) Transferencia recibida</div>
@@ -89,14 +131,8 @@
               <span>Efectivo en caja</span>
               <div class="mini-input-wrap">
                 <span class="mini-prefix">S/</span>
-                <input
-                  v-model.number="efectivo"
-                  type="number"
-                  class="mini-input"
-                  placeholder="0.00"
-                  step="0.01"
-                  :disabled="bloqueado"
-                />
+                <input v-model.number="efectivo" type="number" class="mini-input"
+                  placeholder="0.00" step="0.01" :disabled="bloqueado" />
               </div>
             </div>
           </div>
@@ -113,6 +149,7 @@
           </div>
         </div>
 
+        <!-- Ejecución por rubro -->
         <div class="card mb">
           <div class="card-header">
             <span class="card-title-sm">Ejecución por Rubro</span>
@@ -122,13 +159,10 @@
               <div class="rubro-nombre">{{ rubro.nombre }}</div>
               <div class="rubro-bar-wrap">
                 <div class="rubro-bar">
-                  <div
-                    class="rubro-fill"
-                    :style="{
-                      width: Math.min(rubro.pct, 100) + '%',
-                      background: rubro.pct > 100 ? '#dc2626' : rubro.pct > 90 ? '#f59e0b' : '#2c4fd4'
-                    }"
-                  />
+                  <div class="rubro-fill" :style="{
+                    width: Math.min(rubro.pct, 100) + '%',
+                    background: rubro.pct > 100 ? '#dc2626' : rubro.pct > 90 ? '#f59e0b' : '#2c4fd4'
+                  }" />
                 </div>
                 <span class="rubro-pct">{{ rubro.pct }}%</span>
               </div>
@@ -144,6 +178,7 @@
           </div>
         </div>
 
+        <!-- Tabla de gastos -->
         <div class="card mb">
           <div class="card-header">
             <span class="card-title-sm">Gastos Incluidos en la Rendición</span>
@@ -166,8 +201,7 @@
                   <td><span class="chip-rubro">{{ g.rubro }}</span></td>
                   <td style="font-size:12px;color:#6b7597">{{ fmtTipo(g.tipo_comprobante) }}</td>
                   <td>
-                    <a v-if="g.archivo_url"
-                      :href="`http://localhost:3000${g.archivo_url}`"
+                    <a v-if="g.archivo_url" :href="`http://localhost:3000${g.archivo_url}`"
                       target="_blank" class="comp-link">
                       {{ g.num_comprobante || 'Ver' }}
                     </a>
@@ -186,6 +220,7 @@
           </div>
         </div>
 
+        <!-- Estado de cuenta -->
         <div class="card mb">
           <div class="card-header">
             <div class="card-title-sm">Estado de Cuenta / Pantallazo Bancario</div>
@@ -207,21 +242,19 @@
           </div>
         </div>
 
+        <!-- Observaciones del tesorero -->
         <div class="card mb">
           <div class="card-header">
             <div class="card-title-sm">Observaciones / Justificación</div>
           </div>
           <div class="card-body">
-            <textarea
-              v-model="observaciones"
-              class="form-textarea"
-              rows="3"
+            <textarea v-model="observaciones" class="form-textarea" rows="3"
               placeholder="Detallar cualquier diferencia entre el saldo calculado y el estado de cuenta..."
-              :disabled="bloqueado"
-            />
+              :disabled="bloqueado" />
           </div>
         </div>
 
+        <!-- Observaciones del ATC -->
         <div class="card mb" v-if="rendicionStore.datos?.observaciones?.length">
           <div class="card-header">
             <div class="card-title-sm">Observaciones del ATC</div>
@@ -237,16 +270,35 @@
           </div>
         </div>
 
+        <!-- Documentos descargables -->
+        <div class="download-bar">
+          <div class="download-bar-title">
+            <FileDown style="width:15px;height:15px" />
+            Documentos de la Rendición
+          </div>
+          <div class="download-btns">
+            <button class="btn download-btn" @click="descargarAnexo3" :disabled="descargandoAnexo">
+              <FileSpreadsheet class="btn-ico" />
+              {{ descargandoAnexo ? 'Generando PDF...' : 'Balance de Gastos' }}
+            </button>
+            <button class="btn download-btn orange-btn" @click="descargarDJPdf" :disabled="descargandoDJ">
+              <FileText class="btn-ico" />
+              {{ descargandoDJ ? 'Generando...' : 'DJ de Gastos' }}
+            </button>
+            <button class="btn download-btn green-btn" @click="descargarZip" :disabled="descargandoZip">
+              <Archive class="btn-ico" />
+              {{ descargandoZip ? 'Comprimiendo...' : 'ZIP de Comprobantes' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Acciones -->
         <div class="form-actions" v-if="!bloqueado">
           <button class="btn secondary" @click="guardar" :disabled="guardando">
             <Save class="btn-ico" />
             {{ guardando ? 'Guardando...' : 'Guardar Borrador' }}
           </button>
-          <button
-            class="btn primary"
-            @click="enviar"
-            :disabled="guardando"
-          >
+          <button class="btn primary" @click="enviar" :disabled="guardando">
             <Send class="btn-ico" />
             {{ resumen?.estado === 'observada' ? 'Reenviar al ATC' : 'Enviar al ATC' }}
           </button>
@@ -261,82 +313,120 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Eye, ArrowLeft, ImageIcon, CheckCircle, Save, Send, AlertCircle } from 'lucide-vue-next'
+import {
+  Eye, ArrowLeft, ImageIcon, CheckCircle, Save, Send, AlertCircle,
+  FileSpreadsheet, Archive, FileDown, FileText
+} from 'lucide-vue-next'
 import { useTransferenciasStore } from '@/stores/transferencias.store'
 import { useRendicionStore }      from '@/stores/rendicion.store'
 import { useToastStore }          from '@/stores/toast.store'
+import { useAuthStore }           from '@/stores/auth.store'
 import StatusBadge from '@/components/ui/shared/StatusBadge.vue'
 
 const transferenciaStore = useTransferenciasStore()
 const rendicionStore     = useRendicionStore()
 const toast              = useToastStore()
+const auth               = useAuthStore()
 const route              = useRoute()
 
-const detalleId    = ref<any>(null)
-const efectivo     = ref(0)
-const observaciones = ref('')
-const estadoFile   = ref('')
-const estadoInput  = ref<HTMLInputElement>()
-const guardando    = ref(false)
-const loadingTransf = ref(false)
+const detalleId        = ref<any>(null)
+const nivelFiltro      = ref('')
+const efectivo         = ref(0)
+const observaciones    = ref('')
+const estadoFile       = ref('')
+const estadoInput      = ref<HTMLInputElement>()
+const guardando        = ref(false)
+const loadingTransf    = ref(false)
+const descargandoAnexo = ref(false)
+const descargandoZip   = ref(false)
+const descargandoDJ    = ref(false)
 
-onMounted(async () => {
-  loadingTransf.value = true
-  await transferenciaStore.cargar()
-  loadingTransf.value = false
-
-  if (route.query.transf) {
-    await abrirRendicion(route.query.transf)
+// ── Helpers ────────────────────────────────────────────────────────────────
+function nivelLabel(nivel: string) {
+  return ({ inicial: 'Inicial', primaria: 'Primaria', secundaria: 'Secundaria' })[nivel] ?? nivel
+}
+function fmt(n: number) {
+  return 'S/ ' + (n ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+function fmtFecha(f: string) {
+  if (!f) return '—'
+  return new Date(f).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+function fmtTipo(t: string) {
+  const map: Record<string, string> = {
+    boleta_venta: 'Boleta', recibo_gasto: 'Recibo', factura: 'Factura',
+    ticket: 'Ticket', declaracion_jurada: 'DJ', planilla_movilidad: 'Movilidad'
   }
+  return map[t] ?? t
+}
+
+// ── Filtro de nivel ────────────────────────────────────────────────────────
+const nivelesDisponibles = computed(() => {
+  const set = new Set<string>()
+  transferenciaStore.transferencias.forEach((t: any) => { if (t.nivel) set.add(t.nivel) })
+  return ['inicial', 'primaria', 'secundaria'].filter(n => set.has(n))
 })
 
+function codigoModularDe(nivel: string) {
+  return transferenciaStore.transferencias.find((t: any) => t.nivel === nivel)?.codigo_modular ?? ''
+}
+
+const transfFiltradas = computed(() =>
+  nivelFiltro.value
+    ? transferenciaStore.transferencias.filter((t: any) => t.nivel === nivelFiltro.value)
+    : transferenciaStore.transferencias
+)
+
+// ── Computeds de la rendición activa ──────────────────────────────────────
 const resumen = computed(() => rendicionStore.datos?.resumen ?? null)
 
 const saldoFinal = computed(() => {
-  const monto   = resumen.value?.monto_transferencia ?? 0
-  const gastos  = resumen.value?.total_gastos_registrados ?? 0
+  const monto  = resumen.value?.monto_transferencia       ?? 0
+  const gastos = resumen.value?.total_gastos_registrados  ?? 0
   return monto - gastos - efectivo.value
 })
 
-const bloqueado = computed(() =>
-  resumen.value?.estado === 'aprobada'
-)
+const bloqueado = computed(() => resumen.value?.estado === 'aprobada')
+
 const rubrosResumen = computed(() => {
   const gastos = rendicionStore.datos?.gastos ?? []
-  const t = transferenciaStore.transferencias.find(t => t.id == detalleId.value)
+  const t = transferenciaStore.transferencias.find((t: any) => t.id == detalleId.value)
   if (!t) return []
 
-  const rubros = ['alimentos', 'transporte', 'gas', 'estipendio', 'limpieza', 'otros']
-  return rubros.map(r => {
-    const gastado     = gastos.filter((g: any) => g.rubro === r).reduce((s: number, g: any) => s + g.monto, 0)
+  return ['alimentos', 'transporte', 'gas', 'estipendio', 'limpieza', 'otros'].map(r => {
+    const gastado     = gastos.filter((g: any) => g.rubro === r).reduce((s: number, g: any) => s + Number(g.monto), 0)
     const presupuesto = t.rubros?.[r] ?? 0
     return {
-      nombre: r.charAt(0).toUpperCase() + r.slice(1),
-      gastado,
-      presupuesto,
+      nombre:      r.charAt(0).toUpperCase() + r.slice(1),
+      gastado, presupuesto,
       pct: presupuesto > 0 ? Math.round((gastado / presupuesto) * 100) : 0
     }
   }).filter(r => r.presupuesto > 0)
 })
 
+// ── Ciclo de vida ──────────────────────────────────────────────────────────
+onMounted(async () => {
+  loadingTransf.value = true
+  await transferenciaStore.cargar()
+  loadingTransf.value = false
+  if (route.query.transf) await abrirRendicion(route.query.transf)
+})
+
+// ── Acciones ───────────────────────────────────────────────────────────────
 async function abrirRendicion(id: any) {
   detalleId.value = id
   await rendicionStore.cargar(id)
-  console.log('rendicion datos:', rendicionStore.datos)  // ← agrega esto
   if (resumen.value) {
-    efectivo.value = resumen.value.efectivo_en_caja ?? 0
-    observaciones.value = ''
+    efectivo.value      = resumen.value.efectivo_en_caja ?? 0
+    observaciones.value = resumen.value.observaciones    ?? ''
   }
 }
 
 function cerrarDetalle() {
-  detalleId.value = null
-  rendicionStore.datos = null
-  efectivo.value = 0
-  observaciones.value = ''
-  estadoFile.value = ''
+  detalleId.value = null; rendicionStore.datos = null
+  efectivo.value = 0; observaciones.value = ''; estadoFile.value = ''
 }
 
 function onEstadoChange(e: Event) {
@@ -358,12 +448,16 @@ async function guardar() {
 }
 
 async function enviar() {
-  if (!resumen.value?.rendicion_id) {
-    await guardar()
-  }
   guardando.value = true
   try {
-    await rendicionStore.enviar(resumen.value!.rendicion_id)
+    let rendicionId = resumen.value?.rendicion_id
+
+    if (!rendicionId) {
+      const saved = await rendicionStore.guardar(detalleId.value, efectivo.value, observaciones.value)
+      rendicionId = saved.rendicion_id  // ← usar el id retornado, no esperar recarga
+    }
+
+    await rendicionStore.enviar(rendicionId)
     await rendicionStore.cargar(detalleId.value)
     await transferenciaStore.cargar()
     toast.success('Rendición enviada', 'El ATC fue notificado para revisión')
@@ -373,46 +467,75 @@ async function enviar() {
     guardando.value = false
   }
 }
-
-function fmt(n: number) {
-  return 'S/ ' + (n ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+// ── Descargas ──────────────────────────────────────────────────────────────
+async function descarga(url: string, filename: string, loadingRef: { value: boolean }) {
+  loadingRef.value = true
+  try {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } })
+    if (!res.ok) { const d = await res.json().catch(() => ({})); toast.error('Error', d.error || 'Error al descargar'); return }
+    const blob = await res.blob()
+    const a    = document.createElement('a')
+    a.href = URL.createObjectURL(blob); a.download = filename; a.click()
+    URL.revokeObjectURL(a.href)
+  } finally { loadingRef.value = false }
 }
 
-function fmtFecha(f: string) {
-  if (!f) return '—'
-  return new Date(f).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+function descargarAnexo3() {
+  descarga(`http://localhost:3000/api/rendiciones/${detalleId.value}/anexo3`,
+    `anexo3-transf${detalleId.value}.pdf`, descargandoAnexo)
 }
-
-function fmtTipo(t: string) {
-  const map: Record<string, string> = {
-    boleta_venta: 'Boleta', recibo_gasto: 'Recibo', factura: 'Factura',
-    ticket: 'Ticket', declaracion_jurada: 'DJ', planilla_movilidad: 'Movilidad'
-  }
-  return map[t] ?? t
+function descargarDJPdf() {
+  descarga(`http://localhost:3000/api/rendiciones/${detalleId.value}/dj-pdf`,
+    `dj-transf${detalleId.value}.pdf`, descargandoDJ)
+}
+function descargarZip() {
+  descarga(`http://localhost:3000/api/rendiciones/${detalleId.value}/comprobantes-zip`,
+    `comprobantes-transf${detalleId.value}.zip`, descargandoZip)
 }
 </script>
 
 <style scoped>
 .page { width:100%; }
-.page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+.page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
 .page-title { font-size:26px; font-weight:800; color:#1a2340; margin:0; }
 .page-sub { font-size:13px; color:#6b7597; margin-top:2px; }
 .loading-row { display:flex; align-items:center; gap:10px; padding:40px; justify-content:center; color:#6b7597; }
 .spinner-lg { width:20px; height:20px; border:3px solid #d4dae8; border-top-color:#2c4fd4; border-radius:50%; animation:spin .6s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
+.empty-state { text-align:center; color:#6b7597; padding:32px; font-size:13.5px; }
 
-.rendicion-card {
-  background:#fff; border:1px solid #d4dae8; border-radius:14px;
-  padding:18px 22px; margin-bottom:12px;
-  display:flex; align-items:center; justify-content:space-between;
-  cursor:pointer; transition:all .2s;
-  box-shadow:0 2px 8px rgba(26,47,110,.05);
-}
+/* Nivel pills */
+.nivel-bar { display:flex; align-items:center; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.pill { display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border-radius:20px; border:1.5px solid #d4dae8; background:#f9fafb; font-size:12px; font-weight:600; color:#6b7597; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.pill:hover { border-color:#2c4fd4; color:#2c4fd4; background:#f0f4ff; }
+.pill.active { background:#1a2f6e; color:#fff; border-color:#1a2f6e; }
+.pill.active.inicial    { background:#0369a1; border-color:#0369a1; }
+.pill.active.primaria   { background:#16a34a; border-color:#16a34a; }
+.pill.active.secundaria { background:#b45309; border-color:#b45309; }
+.pill-cod { font-size:10px; font-weight:400; opacity:.75; font-family:monospace; }
+
+/* Nivel badges */
+.nivel-badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; }
+.nivel-badge.inicial    { background:#e0f2fe; color:#0369a1; }
+.nivel-badge.primaria   { background:#dcfce7; color:#16a34a; }
+.nivel-badge.secundaria { background:#fef3c7; color:#b45309; }
+.cod-modular { font-size:11px; color:#9ba6c0; font-family:monospace; }
+
+/* Info bar */
+.transf-info-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:#f7f8fc; border:1px solid #e5e8f0; border-radius:10px; padding:8px 14px; margin-bottom:16px; font-size:12.5px; color:#1a2340; }
+.sep { color:#d4dae8; }
+.t-cod { font-weight:700; color:#2c4fd4; font-family:monospace; font-size:12px; }
+.transf-counter { background:#f0f4ff; color:#2c4fd4; font-weight:700; font-size:11px; padding:2px 8px; border-radius:20px; }
+.ciclo-txt { color:#6b7597; }
+.ie-txt { font-weight:600; color:#1a2340; }
+
+/* Lista de transferencias */
+.rendicion-card { background:#fff; border:1px solid #d4dae8; border-radius:14px; padding:18px 22px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:all .2s; box-shadow:0 2px 8px rgba(26,47,110,.05); }
 .rendicion-card:hover { border-color:#2c4fd4; box-shadow:0 4px 16px rgba(44,79,212,.12); transform:translateY(-1px); }
 .rc-left { flex:1; }
-.rc-title { font-size:15px; font-weight:700; color:#1a2340; display:flex; align-items:center; gap:8px; }
+.rc-title { font-size:15px; font-weight:700; color:#1a2340; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .rc-ciclo { font-size:11px; font-weight:600; background:#e8edf9; color:#2c4fd4; padding:2px 8px; border-radius:6px; }
-.rc-sub { font-size:12.5px; color:#6b7597; margin-top:3px; }
+.rc-sub { font-size:12.5px; color:#6b7597; margin-top:4px; display:flex; align-items:center; gap:6px; }
 .rc-right { display:flex; align-items:center; gap:20px; }
 .rc-monto-wrap { text-align:right; }
 .rc-monto-label { font-size:10px; font-weight:700; text-transform:uppercase; color:#6b7597; }
@@ -424,7 +547,8 @@ function fmtTipo(t: string) {
 .icon-btn { background:#f0f2f8; border:1px solid #d4dae8; border-radius:7px; padding:6px; cursor:pointer; display:flex; color:#6b7597; }
 .btn-ico { width:15px; height:15px; }
 
-.back-row { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+/* Detalle */
+.back-row { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
 .detail-title { font-size:15px; font-weight:700; color:#1a2340; }
 .kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
 .kpi-card { background:#fff; border:1px solid #d4dae8; border-radius:14px; padding:18px 20px; box-shadow:0 2px 8px rgba(26,47,110,.05); }
@@ -442,7 +566,6 @@ function fmtTipo(t: string) {
 .mini-input { width:110px; padding:5px 8px 5px 22px; border:1.5px solid #d4dae8; border-radius:6px; font-size:13px; outline:none; }
 .mini-input:focus { border-color:#2c4fd4; }
 .mini-input:disabled { background:#f0f2f8; color:#6b7597; }
-
 .card { background:#fff; border:1px solid #d4dae8; border-radius:14px; box-shadow:0 2px 8px rgba(26,47,110,.05); }
 .mb { margin-bottom:20px; }
 .card-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #d4dae8; }
@@ -458,7 +581,6 @@ function fmtTipo(t: string) {
 .rubro-montos { font-size:12.5px; font-weight:700; color:#1a2340; display:flex; gap:4px; justify-content:flex-end; }
 .rubro-sep { color:#d4dae8; }
 .empty-rubros { text-align:center; color:#6b7597; padding:16px; font-size:13px; }
-
 .table-wrap { overflow-x:auto; }
 table { width:100%; border-collapse:collapse; }
 thead th { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6b7597; padding:10px 16px; border-bottom:1px solid #d4dae8; background:#fafbfd; text-align:left; }
@@ -470,7 +592,6 @@ td.empty { text-align:center; color:#6b7597; padding:24px; }
 .chip-rubro { background:#e8edf9; color:#2c4fd4; padding:2px 8px; border-radius:6px; font-size:11.5px; font-weight:700; text-transform:capitalize; }
 .comp-link { color:#2c4fd4; font-size:12px; font-weight:600; text-decoration:none; background:#e8edf9; padding:2px 8px; border-radius:6px; }
 .comp-link:hover { background:#2c4fd4; color:#fff; }
-
 .upload-zone { border:2px dashed #d4dae8; border-radius:10px; padding:24px; text-align:center; cursor:pointer; transition:all .2s; }
 .upload-zone:hover { border-color:#2c4fd4; background:#f0f4ff; }
 .upload-ico { width:28px; height:28px; color:#6b7597; margin:0 auto 8px; display:block; }
@@ -478,7 +599,6 @@ td.empty { text-align:center; color:#6b7597; padding:24px; }
 .upload-text strong { color:#2c4fd4; }
 .file-ok { margin-top:10px; font-size:13px; color:#16a34a; font-weight:600; display:flex; align-items:center; gap:6px; }
 .file-ico { width:16px; height:16px; }
-
 .form-textarea { width:100%; padding:10px 12px; border:1.5px solid #d4dae8; border-radius:8px; font-size:13.5px; outline:none; resize:vertical; min-height:80px; box-sizing:border-box; }
 .form-textarea:focus { border-color:#2c4fd4; }
 .form-textarea:disabled { background:#f0f2f8; color:#6b7597; }
@@ -488,8 +608,9 @@ td.empty { text-align:center; color:#6b7597; padding:24px; }
 .obs-autor { font-size:12.5px; font-weight:700; color:#1a2340; }
 .obs-fecha { font-size:11.5px; color:#6b7597; }
 .obs-texto { font-size:13.5px; color:#1a2340; line-height:1.5; }
-
-.form-actions { display:flex; gap:10px; }
+.download-bar { background:#f0f4ff; border:1.5px solid #c5d0f0; border-radius:12px; padding:14px 20px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.download-bar-title { font-size:13px; font-weight:700; color:#1a2340; display:flex; align-items:center; gap:6px; }
+.download-btns { display:flex; gap:10px; flex-wrap:wrap; }
 .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:8px; font-size:13.5px; font-weight:700; cursor:pointer; border:none; transition:all .15s; }
 .btn-sm { padding:6px 12px; font-size:12.5px; }
 .btn.primary { background:#1a2f6e; color:#fff; box-shadow:0 2px 8px rgba(26,47,110,.25); }
@@ -497,30 +618,17 @@ td.empty { text-align:center; color:#6b7597; padding:24px; }
 .btn.secondary { background:#fff; color:#1a2340; border:1.5px solid #d4dae8; }
 .btn.secondary:hover:not(:disabled) { background:#f0f4ff; border-color:#2c4fd4; color:#2c4fd4; }
 .btn:disabled { opacity:.5; cursor:not-allowed; }
-.bloqueado-msg { display:flex; align-items:center; gap:8px; background:#dcfce7; border:1px solid #86efac; border-radius:8px; padding:12px 16px; font-size:13px; color:#15803d; font-weight:600; }
-.estado-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border-radius: 10px;
-  padding: 12px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 20px;
-}
-.estado-banner.enviada {
-  background: #eff6ff;
-  border: 1px solid #93c5fd;
-  color: #1d4ed8;
-}
-.estado-banner.observada {
-  background: #fef3c7;
-  border: 1px solid #fcd34d;
-  color: #b45309;
-}
-.estado-banner.aprobada {
-  background: #dcfce7;
-  border: 1px solid #86efac;
-  color: #15803d;
-}
+.download-btn { background:#1a2f6e; color:#fff; border:none; padding:9px 16px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:background .15s; }
+.download-btn:hover:not(:disabled) { background:#2c4fd4; }
+.download-btn.orange-btn { background:#c2410c; }
+.download-btn.orange-btn:hover:not(:disabled) { background:#ea580c; }
+.download-btn.green-btn { background:#15803d; }
+.download-btn.green-btn:hover:not(:disabled) { background:#16a34a; }
+.download-btn:disabled { opacity:.55; cursor:not-allowed; }
+.form-actions { display:flex; gap:10px; margin-bottom:20px; }
+.bloqueado-msg { display:flex; align-items:center; gap:8px; background:#dcfce7; border:1px solid #86efac; border-radius:8px; padding:12px 16px; font-size:13px; color:#15803d; font-weight:600; margin-bottom:20px; }
+.estado-banner { display:flex; align-items:center; gap:10px; border-radius:10px; padding:12px 16px; font-size:13px; font-weight:600; margin-bottom:20px; }
+.estado-banner.enviada   { background:#eff6ff; border:1px solid #93c5fd; color:#1d4ed8; }
+.estado-banner.observada { background:#fef3c7; border:1px solid #fcd34d; color:#b45309; }
+.estado-banner.aprobada  { background:#dcfce7; border:1px solid #86efac; color:#15803d; }
 </style>
