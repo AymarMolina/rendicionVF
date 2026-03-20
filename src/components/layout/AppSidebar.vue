@@ -106,6 +106,7 @@ const navItems = computed(() => {
     { to: '/coordinador/importar-transferencia', label: 'Importar Transferencia',     icon: ClipboardList },
     { to: '/coordinador/asignar-tesorero', label: 'Asignar tesorero',     icon: ClipboardList },
     { to: '/coordinador/asignar-atc', label: 'Asignar ATC',     icon: ClipboardList },
+    { to: '/coordinador/descarga', label: 'Descargar Anexos',     icon: ClipboardList },
 
   ]
   return []

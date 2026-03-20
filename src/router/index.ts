@@ -44,6 +44,7 @@ const routes: Array<RouteRecordRaw> = [
       { path: 'asignar-tesorero', name: 'asignar-tesorero', component: () => import('@/modules/coordinador/pages/AsignarTesorero.vue') },
       { path: 'asignar-atc', name: 'asignar-atc', component: () => import('@/modules/coordinador/pages/AsignarATC.vue') },
       { path: 'dashboard-coordinador', name: 'dashboard-coordinador', component: () => import('@/modules/coordinador/pages/Dashboardcoordinador.vue') },
+      { path: 'descarga', name: 'descarga', component: () => import('@/modules/coordinador/pages/DescargarDocs.vue') },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/login' },
