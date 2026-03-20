@@ -98,13 +98,8 @@ const navItems = computed(() => {
     { to: '/tesorero/acta-asamblea',  label: 'Acta Asamblea',         icon: Users },
   ]
   if (auth.rol === 'ATC') return [
-    { to: '/atc/control',        label: 'Centro de Control',      icon: LayoutDashboard },
-    { to: '/atc/instituciones',  label: 'Mis Instituciones',      icon: Building2 },
-    { to: '/atc/validacion',     label: 'Validación & Co-Autoría', icon: ShieldCheck },
     { to: '/atc/anexos',         label: 'Revisión Anexos',        icon: ClipboardList, badge: 3 },
-    { to: '/atc/capacitaciones', label: 'Capacitaciones',         icon: Users },
-    { to: '/atc/menu',           label: 'Menú Semanal',           icon: UtensilsCrossed },
-    { to: '/atc/revision',           label: 'Revision Rendiciones',           icon: UtensilsCrossed },
+    { to: '/atc/revision',           label: 'Revision Rendiciones',           icon: ClipboardList },
   ]
   if (auth.rol === 'Coordinador') return [
     { to: '/coordinador/dashboard-coordinador', label: 'Panel Principal',     icon: ClipboardList },

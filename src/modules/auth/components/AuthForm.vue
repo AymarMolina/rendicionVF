@@ -108,7 +108,7 @@ async function quickLogin(rol: string) {
 }
 function redirect(rol: string | null) {
   if (rol === 'tesorero')                    router.push('/tesorero/transferencias')
-  else if (rol === 'atc')                    router.push('/atc/control')
+  else if (rol === 'atc')                    router.push('/atc/anexos')
   else if (rol === 'coordinador_administrativo') router.push('/coordinador/importar-transferencia')
 }
 </script>

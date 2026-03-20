@@ -5,9 +5,9 @@ import { useAuthStore } from './auth.store'
 const BASE = 'http://localhost:3000/api'
 
 export const useRendicionStore = defineStore('rendicion', () => {
-  const auth         = useAuthStore()
-  const datos        = ref<any>(null)
-  const loading      = ref(false)
+  const auth    = useAuthStore()
+  const datos   = ref<any>(null)
+  const loading = ref(false)
 
   function headers() {
     return {
@@ -20,14 +20,18 @@ export const useRendicionStore = defineStore('rendicion', () => {
     loading.value = true
     try {
       const res  = await fetch(`${BASE}/rendiciones/${transferenciaId}`, { headers: headers() })
-      const data = await res.json()
-      datos.value = data
+      datos.value = await res.json()
     } finally {
       loading.value = false
     }
   }
 
-  async function guardar(transferencia_id: number | string, efectivo_en_caja: number, observaciones: string) {
+  async function guardar(
+    transferencia_id: number | string,
+    efectivo_en_caja: number,
+    observaciones: string,
+    // Ya NO recibe fecha_limite_rendicion — ahora la calcula el backend automáticamente
+  ) {
     const res = await fetch(`${BASE}/rendiciones`, {
       method: 'POST',
       headers: headers(),
