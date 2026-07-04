@@ -327,7 +327,7 @@
                   <td><span class="chip-rubro">{{ g.rubro }}</span></td>
                   <td style="font-size:12px;color:#6b7597">{{ fmtTipo(g.tipo_comprobante) }}</td>
                   <td>
-                    <a v-if="g.archivo_url" :href="`http://localhost:3000${g.archivo_url}`" target="_blank" class="comp-link">{{ g.num_comprobante || 'Ver' }}</a>
+                    <a v-if="g.archivo_url" :href="`https://rendicionapif.onrender.com${g.archivo_url}`" target="_blank" class="comp-link">{{ g.num_comprobante || 'Ver' }}</a>
                     <span v-else style="color:#6b7597;font-size:12px">{{ g.num_comprobante || '—' }}</span>
                   </td>
                   <td class="fw">{{ fmt(g.monto) }}</td>
@@ -676,19 +676,19 @@ const descargandoRecibo = ref(false)
 
 function descargarRecibo() {
   descarga(
-    `http://localhost:3000/api/rendiciones/${detalleId.value}/recibo-egreso`,
+    `https://rendicionapif.onrender.com/api/rendiciones/${detalleId.value}/recibo-egreso`,
     `recibo-egreso-transf${detalleId.value}.pdf`,
     descargandoRecibo
   )
 }
 function descargarAnexo3() {
-  descarga(`http://localhost:3000/api/rendiciones/${detalleId.value}/anexo3`,         `anexo3-transf${detalleId.value}.pdf`,       descargandoAnexo)
+  descarga(`https://rendicionapif.onrender.com/api/rendiciones/${detalleId.value}/anexo3`,         `anexo3-transf${detalleId.value}.pdf`,       descargandoAnexo)
 }
 function descargarDJPdf() {
-  descarga(`http://localhost:3000/api/rendiciones/${detalleId.value}/dj-pdf`,          `dj-transf${detalleId.value}.pdf`,           descargandoDJ)
+  descarga(`https://rendicionapif.onrender.com/api/rendiciones/${detalleId.value}/dj-pdf`,          `dj-transf${detalleId.value}.pdf`,           descargandoDJ)
 }
 function descargarZip() {
-  descarga(`http://localhost:3000/api/rendiciones/${detalleId.value}/comprobantes-zip`, `comprobantes-transf${detalleId.value}.zip`, descargandoZip)
+  descarga(`https://rendicionapif.onrender.com/api/rendiciones/${detalleId.value}/comprobantes-zip`, `comprobantes-transf${detalleId.value}.zip`, descargandoZip)
 }
 </script>
 

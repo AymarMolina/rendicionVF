@@ -282,7 +282,7 @@
                   <td class="tipo-td">{{ fmtTipo(g.tipo_comprobante) }}</td>
                   <td class="mono-td">{{ g.num_comprobante || '—' }}</td>
                   <td>
-                    <a v-if="g.archivo_url" :href="`http://localhost:3000${g.archivo_url}`" target="_blank" class="ver-btn">
+                    <a v-if="g.archivo_url" :href="`https://rendicionapif.onrender.com${g.archivo_url}`" target="_blank" class="ver-btn">
                       <Paperclip style="width:11px;height:11px" /> Ver
                     </a>
                     <span v-else class="sin-arch">—</span>
@@ -394,7 +394,7 @@ const atcStore       = useAtcStore()
 const rendicionStore = useRendicionStore()
 const toast          = useToastStore()
 const auth           = useAuthStore()
-const BASE           = 'http://localhost:3000/api'
+const BASE           = 'https://rendicionapif.onrender.com/api'
 
 const detalleId  = ref<any>(null)
 const comentario = ref('')

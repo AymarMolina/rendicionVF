@@ -80,7 +80,7 @@
           </span>
           <div class="card-actions">
             <a v-if="r.acta_url"
-              :href="`http://localhost:3000${r.acta_url}`"
+              :href="`https://rendicionapif.onrender.com${r.acta_url}`"
               target="_blank"
               class="icon-btn green"
               title="Ver acta"

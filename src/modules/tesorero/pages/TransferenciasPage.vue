@@ -503,7 +503,7 @@ function irRendicion(id: any) { router.push({ name: 'rendicion', query: { transf
 // ── Descarga acta ──────────────────────────────────────────────────────────
 async function descargarActa(t: any) {
   const res = await fetch(
-    `http://localhost:3000/api/transferencias/acta?asignacion_id=${t.asignacion_id}`,
+    `https://rendicionapif.onrender.com/api/transferencias/acta?asignacion_id=${t.asignacion_id}`,
     { headers: { Authorization: `Bearer ${auth.token}` } }
   )
   if (!res.ok) { toast.error('Error', 'No se pudo generar el acta'); return }

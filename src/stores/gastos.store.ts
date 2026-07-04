@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAuthStore } from './auth.store'
 
-const BASE = 'http://localhost:3000/api'
+const BASE = 'https://rendicionapif.onrender.com/api'
 
 export const useGastosStore = defineStore('gastos', () => {
   const auth           = useAuthStore()

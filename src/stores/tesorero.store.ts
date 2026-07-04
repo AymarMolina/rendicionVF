@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAuthStore } from './auth.store'
 
-const BASE = 'http://localhost:3000/api'
+const BASE = 'https://rendicionapif.onrender.com/api'
 const TTL  = 60_000 
 
 export const useTesoreroStore = defineStore('tesorero', () => {

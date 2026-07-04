@@ -227,7 +227,7 @@ const atcStore  = useAtcStore()
 const toast     = useToastStore()
 const auth      = useAuthStore()
 const router    = useRouter()
-const BASE      = 'http://localhost:3000/api'
+const BASE      = 'https://rendicionapif.onrender.com/api'
 
 const q              = ref('')
 const nivelFiltro    = ref('')

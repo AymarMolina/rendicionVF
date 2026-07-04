@@ -385,7 +385,7 @@
               <td class="fw">{{ g.concepto }}</td>
               <td><span class="chip-rubro">{{ g.rubro }}</span></td>
               <td>
-                <a v-if="g.archivo_url" :href="`http://localhost:3000${g.archivo_url}`" target="_blank" class="comp-link">
+                <a v-if="g.archivo_url" :href="`https://rendicionapif.onrender.com${g.archivo_url}`" target="_blank" class="comp-link">
                   <Paperclip class="comp-ico" />{{ g.num_comprobante || 'DJ' }}
                 </a>
                 <span v-else style="color:#6b7597;font-size:12px">{{ g.num_comprobante || 'DJ' }}</span>

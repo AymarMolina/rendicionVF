@@ -288,7 +288,7 @@ import StatusBadge from '@/components/ui/shared/StatusBadge.vue'
 
 const auth  = useAuthStore()
 const toast = useToastStore()
-const BASE  = 'http://localhost:3000/api'
+const BASE  = 'https://rendicionapif.onrender.com/api'
 
 const instituciones  = ref<any[]>([])
 const transferencias = ref<any[]>([])

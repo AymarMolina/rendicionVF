@@ -68,7 +68,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(credentials: { Usuario: string; Clave: string }) {
     loading.value = true
     try {
-      const res = await fetch('http://localhost:3000/api/auth/login', {
+      const res = await fetch('https://rendicionapif.onrender.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: credentials.Usuario, password: credentials.Clave })

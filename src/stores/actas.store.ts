@@ -21,7 +21,7 @@ export const useActasStore = defineStore('actas', () => {
     loading.value = true
     try {
       const res = await fetch(
-        `http://localhost:3000/api/actas?asignacion_id=${asignacion_id}`,
+        `https://rendicionapif.onrender.com/api/actas?asignacion_id=${asignacion_id}`,
         { headers: { Authorization: `Bearer ${auth.token}` } }
       )
       actas.value = res.ok ? await res.json() : []
@@ -32,7 +32,7 @@ export const useActasStore = defineStore('actas', () => {
 
   async function generarYDescargar(asignacion_id: number, fecha_comite: string): Promise<boolean> {
     try {
-      const res = await fetch('http://localhost:3000/api/actas/generar', {
+      const res = await fetch('https://rendicionapif.onrender.com/api/actas/generar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

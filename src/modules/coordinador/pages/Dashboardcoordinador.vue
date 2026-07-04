@@ -185,7 +185,7 @@ import { useToastStore } from '@/stores/toast.store'
 
 Chart.register(...registerables)
 
-const BASE  = 'http://localhost:3000/api'
+const BASE  = 'https://rendicionapif.onrender.com/api'
 const auth  = useAuthStore()
 const toast = useToastStore()
 
